@@ -18,8 +18,8 @@ source_folder = "/mnt/dmif-nas/MITEL/challenges/AGGC22/ProMaL/slides"
 destination_folder = "/home/akebli/test5/patches/"
 
 
-
-for cls in ["G3", "G4", "G5", "Stroma", "Normal"]:  # classes
+#define first all the  classes
+for cls in ["G3", "G4", "G5", "Stroma", "Normal"]: 
     os.makedirs(os.path.join(destination_folder, cls), exist_ok=True)
 
 # Read tiles list
