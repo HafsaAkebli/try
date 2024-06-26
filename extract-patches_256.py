@@ -6,10 +6,10 @@ import openslide
 import tifffile
 
 # Define parameters
-tilesize = 256  # Size of the tile (256x256 pixels)
+tilesize = 500  # Size of the tile (256x256 pixels)
 tileradius = tilesize // 2  # Half the size of the tile (128 pixels)
-mincontent = 0.9  # Minimum content threshold for tiles
-step = 128  # Step for the sliding window
+mincontent = 0.95  # Minimum content threshold for tiles
+step = 250  # Step for the sliding window
 
 # Input and output paths
 maindir = "/mnt/dmif-nas/MITEL/challenges/AGGC22/ProMaL/resized-masks/train/"
