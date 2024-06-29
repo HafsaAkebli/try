@@ -27,7 +27,7 @@ def load_histoencoder_model(model_name: str):
 # Define the model name
 model_name = 'prostate_medium' #the pretrained model of histoencoder there is also prostate_small
 patch_folder = "/home/akebli/test5/patches/"
-output_features_file = "/home/akebli/test5/features_xcit_large_24_p8_384_dist.npz"
+output_features_file = "/home/akebli/test5/features_prostate_medium.npz"
 
 # Load the pretrained model and preprocessing transformations
 encoder, preprocess = load_histoencoder_model(model_name)
