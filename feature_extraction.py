@@ -1,10 +1,10 @@
 import os
 import numpy as np
 from PIL import Image
-import timm
-from histoencoder.functional import create_encoder, extract_features
 import torch
 from torchvision import transforms
+import histoencoder.functional as F
+from histoencoder.functional import extract_features
 
 
 # Define parameters
@@ -12,26 +12,27 @@ tilesize = 500  # Size of the tile (500x500 pixels)
 tileradius = tilesize // 2  # Half the size of the tile (250 pixels)
 step = 250  # Step for the sliding window
 
-# Load the pretrained model
-def load_pretrained_model(model_name: str):
-    encoder = timm.create_model(model_name, pretrained=True)
+
+# Load the pretrained HistoEncoder model
+def load_histoencoder_model(model_name: str):
+    encoder = F.create_encoder(model_name)
     encoder.eval()  # Set the model to evaluation mode
-     # Define preprocessing steps
     preprocess = transforms.Compose([
-        transforms.Resize((384, 384)),  # Resize to 384x384
+        transforms.Resize((224, 224)),  # Resize to the input size expected by the model
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
     return encoder, preprocess
 
 # Define the model name
-model_name = 'xcit_large_24_p8_384_dist'
+model_name = 'prostate_medium' #the pretrained model of histoencoder there is also prostate_small
 patch_folder = "/home/akebli/test5/patches/"
 output_features_file = "/home/akebli/test5/features_xcit_large_24_p8_384_dist.npz"
 
 # Load the pretrained model and preprocessing transformations
-encoder, preprocess = load_pretrained_model(model_name)
+encoder, preprocess = load_histoencoder_model(model_name)
 
+# Extract features from patches
 def extract_features_from_patches(encoder, preprocess, patch_folder: str):
     features = []
     labels = []
@@ -50,7 +51,7 @@ def extract_features_from_patches(encoder, preprocess, patch_folder: str):
 
                 # Extract features
                 with torch.no_grad():
-                    feature_vector = extract_features(
+                    feature_vector = F.extract_features(
                         encoder, patch_tensor, num_blocks=1, avg_pool=False
                     ).cpu().numpy().flatten()  # Get features from the model
 
@@ -59,12 +60,13 @@ def extract_features_from_patches(encoder, preprocess, patch_folder: str):
                 labels.append(cls)
     return np.array(features), np.array(labels)
 
+# Extract features and labels
 features, labels = extract_features_from_patches(encoder, preprocess, patch_folder)
 
+# Save features to a file
 def save_features_to_file(features: np.ndarray, labels: np.ndarray, output_file: str):
     np.savez(output_file, features=features, labels=labels)
 
-output_features_file = "/home/akebli/test5/features_xcit_large_24_p8_384_dist.npz"
 # Save features and labels to a file
 save_features_to_file(features, labels, output_features_file)
 

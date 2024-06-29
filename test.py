@@ -1,5 +1,5 @@
-import timm
+import histoencoder.functional as F
 
 # List all available models in timm
-available_models = timm.list_models()
-print([model for model in available_models if 'xcit' in model])
+available_models = F.list_models()
+print(available_models)
