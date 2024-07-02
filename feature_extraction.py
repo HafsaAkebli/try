@@ -31,9 +31,15 @@ def load_histoencoder_model(model_name: str):
 model_name = 'prostate_medium'  # the pretrained model of histoencoder, there is also prostate_small
 patch_folder = "/home/akebli/test5/patches/"
 output_features_file = "/home/akebli/test5/features_prostate_medium.npz"
+model_save_path = "/home/akebli/test5/prostate_medium_model.pth"  # Path to save the model
 
 # Load the pretrained model and preprocessing transformations
 encoder, preprocess = load_histoencoder_model(model_name)
+print("Encoder loaded")
+
+# Save the model
+torch.save(encoder.state_dict(), model_save_path)
+print(f"Model has been saved to {model_save_path}")
 
 # Extract features from patches
 def extract_features_from_patches(encoder, preprocess, patch_folder: str):
