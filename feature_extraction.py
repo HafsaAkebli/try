@@ -71,6 +71,7 @@ def extract_features_from_patches(encoder, preprocess, patch_folder: str):
 
 # Extract features and labels
 features, labels = extract_features_from_patches(encoder, preprocess, patch_folder)
+print(f"Features and ready")
 
 # Save features to a file
 def save_features_to_file(features: np.ndarray, labels: np.ndarray, output_file: str):
