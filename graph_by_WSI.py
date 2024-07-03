@@ -25,6 +25,8 @@ def extract_name_wsi(filename):
     parts = filename.split('-')
     return parts[0]
 
+
+
 # Organize patches by WSI
 def organize_patches_by_wsi(patch_paths):
     wsi_patches = defaultdict(list)
@@ -35,6 +37,8 @@ def organize_patches_by_wsi(patch_paths):
 
 # Organize patches by WSI
 wsi_patches = organize_patches_by_wsi(patch_paths)
+
+print("patches are groupped by WSI")
 
 # Build graph for each WSI
 def build_graph_for_wsi(wsi_patches, k=5):
@@ -86,11 +90,11 @@ def visualize_graph(name_wsi, graph, wsi_image_path=None):
     print(f"Graph for WSI {name_wsi} saved to {figure_save_path}")
 
 # Select a WSI ID to visualize
-wsi_id_to_visualize = 'Subset1_Train_49'
-print(f"Visualizing graph for WSI: {wsi_id_to_visualize}")
+wsi_name_to_visualize = 'Subset1_Train_49'
+print(f"Visualizing graph for WSI: {wsi_name_to_visualize}")
 
 # Path to the WSI image file
-wsi_image_path = f"/mnt/dmif-nas/MITEL/challenges/AGGC22/ProMaL/slides/{wsi_id_to_visualize}.tiff"
-visualize_graph(wsi_id_to_visualize, graphs[wsi_id_to_visualize], wsi_image_path=wsi_image_path)
+wsi_image_path = f"/mnt/dmif-nas/MITEL/challenges/AGGC22/ProMaL/slides/{wsi_name_to_visualize}.tiff"
+visualize_graph(wsi_name_to_visualize, graphs[wsi_name_to_visualize], wsi_image_path=wsi_image_path)
 
 print("done")
