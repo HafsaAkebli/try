@@ -4,8 +4,10 @@ from collections import defaultdict
 from PIL import Image
 import networkx as nx
 import matplotlib.pyplot as plt
+import openslide  # For handling large WSI images
 from sklearn.neighbors import NearestNeighbors  # For KNN searches
 
+# Disable the decompression bomb check for large images
 Image.MAX_IMAGE_PIXELS = None
 
 # Define your output features file
@@ -71,24 +73,37 @@ print(f"Graphs have been built for {len(graphs)} WSIs.")
 # Visualize one WSI graph
 def visualize_graph(name_wsi, graph, wsi_image_path=None):
     """Visualize the KNN graph on top of the WSI image."""
-    pos = nx.spring_layout(graph, weight='weight', seed=42)
-
-    # Draw the graph
-    plt.figure(figsize=(12, 12))
-    nx.draw(graph, pos, node_size=50, with_labels=False, edge_color='blue', alpha=0.5)
-
+    
     if wsi_image_path:
-        # Open and show the whole slide image
-        wsi_image = Image.open(wsi_image_path)
-        plt.imshow(wsi_image, alpha=0.5)  # Adjust cmap as needed for your image
+        # Open the whole slide image using openslide
+        slide = openslide.OpenSlide(wsi_image_path)
 
-    plt.title(f"Graph for WSI: {name_wsi}")
+        # Downsample factor for a suitable level (depends on your WSI)
+        level = 0  # Choose the appropriate level (0 for highest resolution)
+        slide_dim = slide.level_dimensions[level]
+        thumbnail_size = (int(slide_dim[0] * 0.1), int(slide_dim[1] * 0.1))  # Example downsample size (10% of original size)
 
-    # Save the figure
-    figure_save_path = f"/home/akebli/test5/try/graph_{name_wsi}.png"
-    plt.savefig(figure_save_path, bbox_inches='tight')  # Save with tight bounding box
-    plt.show()
-    print(f"Graph for WSI {name_wsi} saved to {figure_save_path}")
+        # Get a thumbnail of the image
+        wsi_image = slide.read_region((0, 0), level, thumbnail_size)
+        wsi_image = wsi_image.convert('RGB')  # Convert to RGB mode for visualization
+
+        # Create a matplotlib figure
+        plt.figure(figsize=(12, 12))
+
+        # Show the WSI image
+        plt.imshow(wsi_image, alpha=0.5, cmap='gray')  # Use 'gray' colormap for H&E images
+
+        # Draw the graph on top of the WSI image
+        pos = nx.spring_layout(graph, weight='weight', seed=42)
+        nx.draw(graph, pos, node_size=50, with_labels=False, edge_color='blue', alpha=0.5, ax=plt.gca())
+
+        plt.title(f"Graph for WSI: {name_wsi}")
+
+        # Save the figure
+        figure_save_path = f"/home/akebli/test5/try/graph_{name_wsi}.png"
+        plt.savefig(figure_save_path, bbox_inches='tight')  # Save with tight bounding box
+        plt.show()
+        print(f"Graph for WSI {name_wsi} saved to {figure_save_path}")
 
 # Select a WSI ID to visualize
 wsi_name_to_visualize = 'Subset1_Train_49'
