@@ -6,6 +6,8 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from sklearn.neighbors import NearestNeighbors  # For KNN searches
 
+Image.MAX_IMAGE_PIXELS = None
+
 # Define your output features file
 output_features_file = "/home/akebli/test5/features_prostate_medium.npz"
 
