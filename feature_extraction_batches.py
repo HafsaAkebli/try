@@ -44,7 +44,7 @@ class PatchDataset(Dataset):
         if self.transform:
             patch_image = self.transform(patch_image)
         
-        return patch_image, label
+        return patch_image, label, patch_path
 
 # Load the pretrained HistoEncoder model
 def load_histoencoder_model(model_name: str):
@@ -80,23 +80,26 @@ dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_worke
 def extract_features_from_batches(encoder, dataloader):
     features = []
     labels = []
-    for images, batch_labels in dataloader:
+    patch_paths = []
+    for images, batch_labels, paths in dataloader:
         images = images.to(device)
         with torch.no_grad():
             batch_features = F.extract_features(encoder, images, num_blocks=1, avg_pool=False)
         features.append(batch_features.cpu().numpy())
         labels.extend(batch_labels)
-    return np.concatenate(features, axis=0), np.array(labels)
+        patch_paths.extend(paths)
+    return np.concatenate(features, axis=0), np.array(labels), np.array(patch_paths)
 
-# Extract features and labels
-features, labels = extract_features_from_batches(encoder, dataloader)
-print("features extracted successfully")
+# Extract features, labels, and patch paths
+features, labels, patch_paths = extract_features_from_batches(encoder, dataloader)
+print("Features extracted successfully")
 
-# Save features to a file
-def save_features_to_file(features: np.ndarray, labels: np.ndarray, output_file: str):
-    np.savez(output_file, features=features, labels=labels)
+# Save features, labels, and patch paths to a file
+def save_features_to_file(features: np.ndarray, labels: np.ndarray, patch_paths: np.ndarray, output_file: str):
+    np.savez(output_file, features=features, labels=labels, patch_paths=patch_paths)
 
-# Save features and labels to a file
-save_features_to_file(features, labels, output_features_file)
+# Save features, labels, and patch paths to a file
+save_features_to_file(features, labels, patch_paths, output_features_file)
 
-print(f"Features and labels have been saved to {output_features_file}")
+print(f"Features, labels, and patch paths have been saved to {output_features_file}")
+
