@@ -28,6 +28,7 @@ def extract_name_wsi(filename):
     parts = filename.split('-')
     return parts[0]
 
+
 # Organize patches by WSI
 def organize_patches_by_wsi(patch_paths):
     wsi_patches = defaultdict(list)
@@ -38,6 +39,7 @@ def organize_patches_by_wsi(patch_paths):
 
 # Organize patches by WSI
 wsi_patches = organize_patches_by_wsi(patch_paths)
+print("patches are groupped by WSI")
 
 # Build graph for each WSI
 def build_graph_for_wsi(wsi_patches, k=5):
@@ -45,18 +47,22 @@ def build_graph_for_wsi(wsi_patches, k=5):
     for wsi_id, patches in wsi_patches.items():
         # Extract features for the patches
         patch_features = np.array([patch_to_feature[patch] for patch in patches])
-
+        
         # Convert features to a PyTorch tensor and move to GPU
         patch_features_tensor = torch.tensor(patch_features).to(device)
 
         # Initialize FAISS index for GPU
-        index = faiss.IndexFlatL2(patch_features_tensor.shape[1])
+        dimension = patch_features_tensor.shape[1]
+        index = faiss.IndexFlatL2(dimension)  # Create a FAISS index
         index = faiss.index_cpu_to_all_gpus(index)  # Move FAISS index to GPU
-        index.add(patch_features_tensor.cpu().numpy())
+
+        # Add features to FAISS index
+        index.add(patch_features_tensor.cpu().numpy())  # FAISS operations performed on CPU
 
         # Perform KNN search
         distances, indices = index.search(patch_features_tensor.cpu().numpy(), k + 1)
 
+        # Create a graph for the current WSI
         G = nx.Graph()
         for i, patch_path in enumerate(patches):
             G.add_node(patch_path, feature=patch_to_feature[patch_path])
@@ -89,7 +95,7 @@ def visualize_graph(name_wsi, graph, wsi_image_path=None):
     plt.title(f"Graph for WSI: {name_wsi}")
 
     # Save the figure
-    figure_save_path = f"/home/akebli/test5/try/graph_{name_wsi}.png"
+    figure_save_path = f"/home/akebli/test5/try/graph_{name_wsi}_faiss.png"
     plt.savefig(figure_save_path)
     plt.show()
     print(f"Graph for WSI {name_wsi} saved to {figure_save_path}")
