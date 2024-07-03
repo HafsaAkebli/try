@@ -7,6 +7,10 @@ import faiss
 import matplotlib.pyplot as plt
 import torch
 
+# Define the device to use (GPU if available, otherwise CPU)
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+print(f"Using device: {device}")
+
 # Define your output features file
 output_features_file = "/home/akebli/test5/features_prostate_medium.npz"
 
@@ -43,7 +47,7 @@ def build_graph_for_wsi(wsi_patches, k=5):
         patch_features = np.array([patch_to_feature[patch] for patch in patches])
 
         # Convert features to a PyTorch tensor and move to GPU
-        patch_features_tensor = torch.tensor(patch_features).cuda()
+        patch_features_tensor = torch.tensor(patch_features).to(device)
 
         # Initialize FAISS index for GPU
         index = faiss.IndexFlatL2(patch_features_tensor.shape[1])
@@ -91,11 +95,11 @@ def visualize_graph(name_wsi, graph, wsi_image_path=None):
     print(f"Graph for WSI {name_wsi} saved to {figure_save_path}")
 
 # Select a WSI ID to visualize
-wsi_id_to_visualize = 'Subset1_Train_49'
-print(f"Visualizing graph for WSI: {wsi_id_to_visualize}")
+wsi_name_to_visualize = 'Subset1_Train_49'
+print(f"Visualizing graph for WSI: {wsi_name_to_visualize}")
 
 # Path to the WSI image file
-wsi_image_path = f"/mnt/dmif-nas/MITEL/challenges/AGGC22/ProMaL/slides/{wsi_id_to_visualize}.tiff"
-visualize_graph(wsi_id_to_visualize, graphs[wsi_id_to_visualize], wsi_image_path=wsi_image_path)
+wsi_image_path = f"/mnt/dmif-nas/MITEL/challenges/AGGC22/ProMaL/slides/{wsi_name_to_visualize}.tiff"
+visualize_graph(wsi_name_to_visualize, graphs[wsi_name_to_visualize], wsi_image_path=wsi_image_path)
 
 print("done")
