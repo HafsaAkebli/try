@@ -1,12 +1,10 @@
 import numpy as np
 import os
-import random
 from collections import defaultdict
 from PIL import Image
 import networkx as nx
 import matplotlib.pyplot as plt
-import torch
-from sklearn.neighbors import NearestNeighbors  # Remove if using FAISS
+from sklearn.neighbors import NearestNeighbors  # For KNN searches
 
 # Define your output features file
 output_features_file = "/home/akebli/test5/features_prostate_medium.npz"
@@ -22,13 +20,13 @@ patch_to_feature = dict(zip(patch_paths, features))
 
 # Function to extract WSI name from patch paths
 def extract_name_wsi(filename):
+    """Extract WSI ID from the patch filename."""
     parts = filename.split('-')
     return parts[0]
 
-
-
 # Organize patches by WSI
 def organize_patches_by_wsi(patch_paths):
+    """Organize patches into a dictionary by WSI ID."""
     wsi_patches = defaultdict(list)
     for patch_path in patch_paths:
         wsi_id = extract_name_wsi(os.path.basename(patch_path))
@@ -37,11 +35,11 @@ def organize_patches_by_wsi(patch_paths):
 
 # Organize patches by WSI
 wsi_patches = organize_patches_by_wsi(patch_paths)
-
-print("patches are groupped by WSI")
+print("Patches are grouped by WSI")
 
 # Build graph for each WSI
 def build_graph_for_wsi(wsi_patches, k=5):
+    """Build a KNN graph for each WSI where edges represent nearest neighbors."""
     graphs = {}
     for wsi_id, patches in wsi_patches.items():
         # Extract features for the patches
@@ -70,22 +68,23 @@ print(f"Graphs have been built for {len(graphs)} WSIs.")
 
 # Visualize one WSI graph
 def visualize_graph(name_wsi, graph, wsi_image_path=None):
+    """Visualize the KNN graph on top of the WSI image."""
     pos = nx.spring_layout(graph, weight='weight', seed=42)
-    plt.figure(figsize=(12, 12))
 
     # Draw the graph
-    nx.draw(graph, pos, node_size=50, with_labels=False)
+    plt.figure(figsize=(12, 12))
+    nx.draw(graph, pos, node_size=50, with_labels=False, edge_color='blue', alpha=0.5)
 
     if wsi_image_path:
         # Open and show the whole slide image
         wsi_image = Image.open(wsi_image_path)
-        plt.imshow(wsi_image, alpha=0.5)
+        plt.imshow(wsi_image, alpha=0.5)  # Adjust cmap as needed for your image
 
     plt.title(f"Graph for WSI: {name_wsi}")
 
     # Save the figure
     figure_save_path = f"/home/akebli/test5/try/graph_{name_wsi}.png"
-    plt.savefig(figure_save_path)
+    plt.savefig(figure_save_path, bbox_inches='tight')  # Save with tight bounding box
     plt.show()
     print(f"Graph for WSI {name_wsi} saved to {figure_save_path}")
 
