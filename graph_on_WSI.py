@@ -22,20 +22,13 @@ patch_paths = data['patch_paths']
 # Create a mapping from patch path to feature vector
 patch_to_feature = dict(zip(patch_paths, features))
 
-# Function to extract WSI name and coordinates from patch paths
+# Extract WSI name and coordinates from patch paths
 def extract_name_wsi_and_coords(filename):
-    """Extract WSI ID and coordinates from the patch filename."""
+    """Extract WSI name and coordinates of the patch from the patch filename."""
     parts = filename.split('-')
-    if len(parts) == 3:
-        wsi_id = parts[0]
-        x = int(parts[1])
-        y = int(parts[2].split('.')[0])  # Remove the extension
-    elif len(parts) == 4:
-        wsi_id = '-'.join(parts[:3])
-        x = int(parts[3])
-        y = int(parts[4].split('.')[0])  # Remove the extension
-    else:
-        raise ValueError(f"Unexpected filename format: {filename}")
+    wsi_id = "-".join(parts[:-2])  #first parts
+    x = int(parts[-2])   #coordinate x
+    y = int(parts[-1].split('.')[0])  # coordinate y Remove the extension
     return wsi_id, x, y
 
 # Group patches by WSI and extract coordinates
@@ -113,7 +106,7 @@ def visualize_graph(name_wsi, graph, wsi_image_path=None):
         nx.draw(
             graph, 
             pos, 
-            node_size=20,  # Size of the nodes
+            node_size=5,  # Size of the nodes
             node_color='black',  # Color of the nodes
             edge_color='blue',  # Color of the edges
             #alpha=0.7,  # Transparency of the graph

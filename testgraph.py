@@ -4,17 +4,17 @@ from collections import defaultdict
 from PIL import Image
 import networkx as nx
 import matplotlib.pyplot as plt
-import openslide  # For handling large WSI images
-from sklearn.neighbors import NearestNeighbors  # For KNN searches
+import openslide
+from sklearn.neighbors import NearestNeighbors
 
 # Disable the decompression bomb check for large images
 Image.MAX_IMAGE_PIXELS = None
 
 # Define your output features file
-output_features_file = "/home/akebli/test5/features_prostate_medium.npz"
+extracted_features = "/home/akebli/test5/features_prostate_medium.npz"
 
 # Load the .npz file containing features, labels, and patch paths
-data = np.load(output_features_file)
+data = np.load(extracted_features)
 features = data['features']
 labels = data['labels']
 patch_paths = data['patch_paths']
@@ -22,29 +22,27 @@ patch_paths = data['patch_paths']
 # Create a mapping from patch path to feature vector
 patch_to_feature = dict(zip(patch_paths, features))
 
-# Function to extract WSI name and coordinates from patch paths
+# Extract WSI name and coordinates from patch paths
 def extract_name_wsi_and_coords(filename):
-    """Extract WSI ID and coordinates from the patch filename."""
-    try:
-        # Extract the WSI ID and coordinates from the filename
-        parts = filename.split('-')
-        wsi_id = '-'.join(parts[0].split('_')[:-2])  # Extract WSI ID (e.g., Subset1_Train_49)
-        x = int(parts[1])
-        y = int(parts[2].split('.')[0])  # Remove the extension
-        return wsi_id, x, y
-    except Exception as e:
-        print(f"Error parsing filename '{filename}': {e}")
-        raise
+    """Extract WSI name and coordinates of the patch from the patch filename."""
+    parts = filename.split('-')
+    wsi_id = "-".join(parts[:-2])  #first parts
+    x = int(parts[-2])   #coordinate x
+    y = int(parts[-1].split('.')[0])  # coordinate y Remove the extension
+    return wsi_id, x, y
 
-# Organize patches by WSI and extract coordinates
+
+# Group patches by WSI and extract coordinates
 def organize_patches_by_wsi(patch_paths):
-    """Organize patches into a dictionary by WSI ID and extract patch coordinates."""
+    """Organize patches into a dictionary by WSI name and extracted patch coordinates."""
     wsi_patches = defaultdict(lambda: {'paths': [], 'coords': []})
     for patch_path in patch_paths:
         try:
-            wsi_id, x, y = extract_name_wsi_and_coords(os.path.basename(patch_path))
-            wsi_patches[wsi_id]['paths'].append(patch_path)
-            wsi_patches[wsi_id]['coords'].append((x, y))
+            wsi_name, x, y = extract_name_wsi_and_coords(os.path.basename(patch_path))
+            centroid_x = x + 250  # Calculate centroid x-coordinate
+            centroid_y = y + 250  # Calculate centroid y-coordinate
+            wsi_patches[wsi_name]['paths'].append(patch_path)
+            wsi_patches[wsi_name]['coords'].append((centroid_x, centroid_y))
         except Exception as e:
             print(f"Skipping patch due to error: {e}")
     return wsi_patches
@@ -83,10 +81,13 @@ def build_graph_for_wsi(wsi_patches, k=5):
 graphs = build_graph_for_wsi(wsi_patches)
 print(f"Graphs have been built for {len(graphs)} WSIs.")
 
+# Print the available WSIs for visualization
+print("Available WSIs:")
+print(list(graphs.keys()))
+
 # Visualize one WSI graph
 def visualize_graph(name_wsi, graph, wsi_image_path=None):
     """Visualize the KNN graph on top of the WSI image."""
-
     if wsi_image_path:
         # Open the whole slide image using openslide
         slide = openslide.OpenSlide(wsi_image_path)
@@ -94,24 +95,27 @@ def visualize_graph(name_wsi, graph, wsi_image_path=None):
         # Get the full resolution of the image
         slide_dim = slide.dimensions
 
+        # Calculate the resize factor (224/500)
+        resize_factor = 224 / 500
+
         # Create a matplotlib figure
         plt.figure(figsize=(12, 12))
 
-        # Get a thumbnail of the image
-        thumbnail_size = (int(slide_dim[0] * 0.1), int(slide_dim[1] * 0.1))  # Example downsample size (10% of original size)
-        wsi_image = slide.read_region((0, 0), 0, thumbnail_size)
+        # Resize the WSI image
+        wsi_image = slide.get_thumbnail((int(slide_dim[0] * resize_factor), int(slide_dim[1] * resize_factor)))
         wsi_image = wsi_image.convert('RGB')  # Convert to RGB mode for visualization
 
         # Draw the graph on top of the WSI image
         pos = nx.get_node_attributes(graph, 'pos')
 
         # Convert positions to match the WSI image coordinates
-        pos = {k: (v[0] * 0.1, v[1] * 0.1) for k, v in pos.items()}  # Scale down coordinates by 10%
+        pos = {k: (v[0] * resize_factor, v[1] * resize_factor) for k, v in pos.items()}  # Scale down coordinates by resize factor
 
+        plt.imshow(wsi_image, alpha=0.8)  # Use default colormap for H&E images
         nx.draw(
             graph, 
             pos, 
-            node_size=20,  # Size of the nodes
+            node_size=5,  # Size of the nodes
             node_color='black',  # Color of the nodes
             edge_color='cyan',  # Color of the edges
             alpha=0.7,  # Transparency of the graph
@@ -119,9 +123,6 @@ def visualize_graph(name_wsi, graph, wsi_image_path=None):
             with_labels=False,  # Do not show the labels
             ax=plt.gca()  # Draw on the current axes
         )
-
-        # Show the WSI image
-        plt.imshow(wsi_image, alpha=0.8)  # Use default colormap for H&E images
 
         plt.title(f"Graph for WSI: {name_wsi}")
 
@@ -132,7 +133,7 @@ def visualize_graph(name_wsi, graph, wsi_image_path=None):
         print(f"Graph for WSI {name_wsi} saved to {figure_save_path}")
 
 # Select a WSI ID to visualize
-wsi_name_to_visualize = 'Subset1_Train_49'
+wsi_name_to_visualize = 'Subset3_Train_8_Akoya'
 print(f"Visualizing graph for WSI: {wsi_name_to_visualize}")
 
 # Path to the WSI image file
