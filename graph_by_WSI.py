@@ -22,31 +22,46 @@ patch_paths = data['patch_paths']
 # Create a mapping from patch path to feature vector
 patch_to_feature = dict(zip(patch_paths, features))
 
-# Function to extract WSI name from patch paths
-def extract_name_wsi(filename):
-    """Extract WSI ID from the patch filename."""
+# Function to extract WSI name and coordinates from patch paths
+def extract_name_wsi_and_coords(filename):
+    """Extract WSI ID and coordinates from the patch filename."""
     parts = filename.split('-')
-    return parts[0]
+    if len(parts) == 3:
+        wsi_id = parts[0]
+        x = int(parts[1])
+        y = int(parts[2].split('.')[0])  # Remove the extension
+    elif len(parts) == 4:
+        wsi_id = '-'.join(parts[:3])
+        x = int(parts[3])
+        y = int(parts[4].split('.')[0])  # Remove the extension
+    else:
+        raise ValueError(f"Unexpected filename format: {filename}")
+    return wsi_id, x, y
 
-# Organize patches by WSI
+# Group patches by WSI and extract coordinates
 def organize_patches_by_wsi(patch_paths):
-    """Organize patches into a dictionary by WSI ID."""
-    wsi_patches = defaultdict(list)
+    """Organize patches into a dictionary by WSI ID and extract patch coordinates."""
+    wsi_patches = defaultdict(lambda: {'paths': [], 'coords': []})
     for patch_path in patch_paths:
-        wsi_id = extract_name_wsi(os.path.basename(patch_path))
-        wsi_patches[wsi_id].append(patch_path)
+        try:
+            wsi_name, x, y = extract_name_wsi_and_coords(os.path.basename(patch_path))
+            wsi_patches[wsi_name]['paths'].append(patch_path)
+            wsi_patches[wsi_name]['coords'].append((x, y))
+        except Exception as e:
+            print(f"Skipping patch due to error: {e}")
     return wsi_patches
 
 # Organize patches by WSI
 wsi_patches = organize_patches_by_wsi(patch_paths)
-print("Patches are grouped by WSI")
+print(f"Patches are grouped by WSI: {len(wsi_patches)} WSIs found.")
 
 # Build graph for each WSI
 def build_graph_for_wsi(wsi_patches, k=5):
     """Build a KNN graph for each WSI where edges represent nearest neighbors."""
     graphs = {}
-    for wsi_id, patches in wsi_patches.items():
-        # Extract features for the patches
+    for wsi_id, data in wsi_patches.items():
+        patches = data['paths']
+        coords = data['coords']
         patch_features = np.array([patch_to_feature[patch] for patch in patches])
 
         # Initialize NearestNeighbors and fit the model
@@ -56,7 +71,7 @@ def build_graph_for_wsi(wsi_patches, k=5):
 
         G = nx.Graph()
         for i, patch_path in enumerate(patches):
-            G.add_node(patch_path, feature=patch_to_feature[patch_path])
+            G.add_node(patch_path, feature=patch_to_feature[patch_path], pos=coords[i])
             for j in range(1, k + 1):  # Skip the 0-th neighbor which is the node itself
                 neighbor_idx = indices[i, j]
                 neighbor_patch = patches[neighbor_idx]
@@ -73,29 +88,39 @@ print(f"Graphs have been built for {len(graphs)} WSIs.")
 # Visualize one WSI graph
 def visualize_graph(name_wsi, graph, wsi_image_path=None):
     """Visualize the KNN graph on top of the WSI image."""
-    
     if wsi_image_path:
         # Open the whole slide image using openslide
         slide = openslide.OpenSlide(wsi_image_path)
 
-        # Downsample factor for a suitable level (depends on your WSI)
-        level = 0  # Choose the appropriate level (0 for highest resolution)
-        slide_dim = slide.level_dimensions[level]
-        thumbnail_size = (int(slide_dim[0] * 0.1), int(slide_dim[1] * 0.1))  # Example downsample size (10% of original size)
-
-        # Get a thumbnail of the image
-        wsi_image = slide.read_region((0, 0), level, thumbnail_size)
-        wsi_image = wsi_image.convert('RGB')  # Convert to RGB mode for visualization
+        # Get the full resolution of the image
+        slide_dim = slide.dimensions
 
         # Create a matplotlib figure
         plt.figure(figsize=(12, 12))
 
-        # Show the WSI image
-        plt.imshow(wsi_image, alpha=0.5, cmap='gray')  # Use 'gray' colormap for H&E images
+        # Get a thumbnail of the image
+        thumbnail_size = (int(slide_dim[0] * 0.1), int(slide_dim[1] * 0.1))  # Example downsample size (10% of original size)
+        wsi_image = slide.read_region((0, 0), 0, thumbnail_size)
+        wsi_image = wsi_image.convert('RGB')  # Convert to RGB mode for visualization
 
         # Draw the graph on top of the WSI image
-        pos = nx.spring_layout(graph, weight='weight', seed=42)
-        nx.draw(graph, pos, node_size=50, with_labels=False, edge_color='blue', alpha=0.5, ax=plt.gca())
+        pos = nx.get_node_attributes(graph, 'pos')
+
+        # Convert positions to match the WSI image coordinates
+        pos = {k: (v[0] * 0.1, v[1] * 0.1) for k, v in pos.items()}  # Scale down coordinates by 10%
+
+        plt.imshow(wsi_image, alpha=0.8)  # Use default colormap for H&E images
+        nx.draw(
+            graph, 
+            pos, 
+            node_size=20,  # Size of the nodes
+            node_color='black',  # Color of the nodes
+            edge_color='cyan',  # Color of the edges
+            alpha=0.7,  # Transparency of the graph
+            width=0.5,  # Width of the edges
+            with_labels=False,  # Do not show the labels
+            ax=plt.gca()  # Draw on the current axes
+        )
 
         plt.title(f"Graph for WSI: {name_wsi}")
 
