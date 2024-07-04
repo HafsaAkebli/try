@@ -38,8 +38,11 @@ def organize_patches_by_wsi(patch_paths):
     for patch_path in patch_paths:
         try:
             wsi_name, x, y = extract_name_wsi_and_coords(os.path.basename(patch_path))
+            #the centroid will be the node
+            centroid_x = x + 250  # Calculate centroid x-coordinate  
+            centroid_y = y + 250  # Calculate centroid y-coordinate
             wsi_patches[wsi_name]['paths'].append(patch_path)
-            wsi_patches[wsi_name]['coords'].append((x, y))
+            wsi_patches[wsi_name]['coords'].append((centroid_x, centroid_y))
         except Exception as e:
             print(f"Skipping patch due to error: {e}")
     return wsi_patches
@@ -92,25 +95,31 @@ def visualize_graph(name_wsi, graph, wsi_image_path=None):
         # Get the full resolution of the image
         slide_dim = slide.dimensions
 
-        # Create a matplotlib figure
-        plt.figure(figsize=(24, 24))
+        # Calculate the resize factor (224/500)
+        resize_factor = 224 / 500
 
-        # Read the entire WSI image at level 0 (highest resolution)
-        wsi_image = slide.read_region((0, 0), 0, slide_dim)
+        # Create a matplotlib figure
+        plt.figure(figsize=(20, 20))
+
+        # Resize the WSI image
+        wsi_image = slide.get_thumbnail((int(slide_dim[0] * resize_factor), int(slide_dim[1] * resize_factor)))
         wsi_image = wsi_image.convert('RGB')  # Convert to RGB mode for visualization
 
         # Draw the graph on top of the WSI image
         pos = nx.get_node_attributes(graph, 'pos')
 
-        plt.imshow(wsi_image, alpha=0.8)  # Use default colormap for H&E images
+        # Convert positions to match the WSI image coordinates
+        pos = {k: (v[0] * resize_factor, v[1] * resize_factor) for k, v in pos.items()}  # Scale down coordinates by resize factor
+
+        plt.imshow(wsi_image)  #alpha=0.8 # Use default colormap for H&E images
         nx.draw(
             graph, 
             pos, 
             node_size=5,  # Size of the nodes
             node_color='black',  # Color of the nodes
             edge_color='blue',  # Color of the edges
-            #alpha=0.7,  # Transparency of the graph
-            width=0.5,  # Width of the edges
+            alpha=0.5,  # Transparency of the graph
+            width=0.4,  # Width of the edges
             with_labels=False,  # Do not show the labels
             ax=plt.gca()  # Draw on the current axes
         )
@@ -118,7 +127,7 @@ def visualize_graph(name_wsi, graph, wsi_image_path=None):
         plt.title(f"Graph for WSI: {name_wsi}")
 
         # Save the figure
-        figure_save_path = f"/home/akebli/test5/try/graph_{name_wsi}_test1.png"
+        figure_save_path = f"/home/akebli/test5/try/graph_{name_wsi}_tentative.png"
         plt.savefig(figure_save_path, bbox_inches='tight')  # Save with tight bounding box
         plt.show()
         print(f"Graph for WSI {name_wsi} saved to {figure_save_path}")
