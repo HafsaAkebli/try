@@ -113,7 +113,7 @@ def visualize_graph(name_wsi, graph, wsi_image_path=None):
         nx.draw(
             graph, 
             pos, 
-            node_size=5,  # Size of the nodes
+            node_size=20,  # Size of the nodes
             node_color='black',  # Color of the nodes
             edge_color='blue',  # Color of the edges
             alpha=0.7,  # Transparency of the graph
