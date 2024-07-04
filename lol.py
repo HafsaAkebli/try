@@ -1,11 +1,8 @@
 #Graph construction and GNN framework
-from torch_geometric.nn import GCNConv
-from torch_geometric.utils import to_networkx
 import os
 import matplotlib.pyplot as plt
 import torch
 #deal with slides
-import openslide
 from openslide import open_slide
 from glob import glob
 import numpy as np
@@ -18,16 +15,16 @@ print(torch.cuda.is_available())
 #so in each subfolder of these ones we have like Subset1_Train_1 containing tiff images : G3_Mask.tif, G4_Mask.tif, Normal_Mask.tif,
 #Stroma_Mask.tif and sometimes also G5_Mask.tif sometimes just 3 types, sometimes the 5 types
 
-path_masks_train="/mnt/dmif-nas/MITEL/challenges/AGGC22/ProMaL/resized-masks/train/"
-path_masks_valid= "/mnt/dmif-nas/MITEL/challenges/AGGC22/ProMaL/resized-masks/valid/"
-
+#path_masks_train="/mnt/dmif-nas/MITEL/challenges/AGGC22/ProMaL/resized-masks/train/"
+#path_masks_valid= "/mnt/dmif-nas/MITEL/challenges/AGGC22/ProMaL/resized-masks/valid/"
+slides= "/mnt/dmif-nas/MITEL/challenges/AGGC22/ProMaL/slides/"
 
 # Function to list all .tif files in subdirectories
 def list_tif_files(main_dir):
     return (glob(os.path.join(main_dir, '**', '*.tif'), recursive=True))
 
-list_tif_files(path_masks_train)
-print(len(list_tif_files(path_masks_train)))
+list_tif_files(slides)
+print(len(list_tif_files(slides)))
 
 
 # visualize an image using OpenSlide and matplotlib
@@ -53,7 +50,7 @@ def visualize_image(file_path, save_dir):
     slide.close()
     print(f"Saved image to {save_path}")
 
-visualize_image("/home/sda/AGGC22/ProMaL/slides/Subset2_Train_6.tiff","/home/sda/akebli/")
+visualize_image("/home/sda/AGGC22/ProMaL/slides/Subset1_Train_49.tiff","/home/sda/akebli/test5/try")
 
 
 #print(len(path_masks_train))
