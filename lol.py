@@ -21,9 +21,9 @@ slides= "/mnt/dmif-nas/MITEL/challenges/AGGC22/ProMaL/slides/"
 
 # Function to list all .tif files in subdirectories
 def list_tif_files(main_dir):
-    return (glob(os.path.join(main_dir, '**', '*.tif'), recursive=True))
+    return (glob(os.path.join(main_dir, '**', '*.tiff'), recursive=True))
 
-list_tif_files(slides)
+print(list_tif_files(slides))
 print(len(list_tif_files(slides)))
 
 
@@ -50,7 +50,7 @@ def visualize_image(file_path, save_dir):
     slide.close()
     print(f"Saved image to {save_path}")
 
-visualize_image("/home/sda/AGGC22/ProMaL/slides/Subset1_Train_49.tiff","/home/sda/akebli/test5/try")
+visualize_image("/mnt/dmif-nas/MITEL/challenges/AGGC22/ProMaL/slides/Subset1_Train_49.tiff","/home/akebli/test5/try/")
 
 
 #print(len(path_masks_train))

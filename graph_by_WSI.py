@@ -85,6 +85,10 @@ def build_graph_for_wsi(wsi_patches, k=5):
 graphs = build_graph_for_wsi(wsi_patches)
 print(f"Graphs have been built for {len(graphs)} WSIs.")
 
+# Print the available WSIs for visualization
+print("Available WSIs:")
+print(list(graphs.keys()))
+
 # Visualize one WSI graph
 def visualize_graph(name_wsi, graph, wsi_image_path=None):
     """Visualize the KNN graph on top of the WSI image."""
@@ -131,7 +135,7 @@ def visualize_graph(name_wsi, graph, wsi_image_path=None):
         print(f"Graph for WSI {name_wsi} saved to {figure_save_path}")
 
 # Select a WSI ID to visualize
-wsi_name_to_visualize = 'Subset2_Train_19.tiff'
+wsi_name_to_visualize = 'Subset2_Train_19'
 print(f"Visualizing graph for WSI: {wsi_name_to_visualize}")
 
 # Path to the WSI image file
