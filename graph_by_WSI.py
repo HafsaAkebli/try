@@ -119,7 +119,7 @@ def visualize_graph(name_wsi, graph, wsi_image_path=None):
             pos, 
             node_size=5,  # Size of the nodes
             node_color='black',  # Color of the nodes
-            edge_color='cyan',  # Color of the edges
+            edge_color='blue',  # Color of the edges
             alpha=0.7,  # Transparency of the graph
             width=0.5,  # Width of the edges
             with_labels=False,  # Do not show the labels

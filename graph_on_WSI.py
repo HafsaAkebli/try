@@ -100,19 +100,14 @@ def visualize_graph(name_wsi, graph, wsi_image_path=None):
         slide_dim = slide.dimensions
 
         # Create a matplotlib figure
-        plt.figure(figsize=(12, 12))
+        plt.figure(figsize=(24, 24))
 
-        # Get a downsampled version of the WSI image for faster processing
-        downsample_factor = 32  # Adjust this factor based on your requirements
-        thumbnail_size = (slide_dim[0] // downsample_factor, slide_dim[1] // downsample_factor)
-        wsi_image = slide.get_thumbnail(thumbnail_size)
+        # Read the entire WSI image at level 0 (highest resolution)
+        wsi_image = slide.read_region((0, 0), 0, slide_dim)
         wsi_image = wsi_image.convert('RGB')  # Convert to RGB mode for visualization
 
         # Draw the graph on top of the WSI image
         pos = nx.get_node_attributes(graph, 'pos')
-
-        # Scale down coordinates to match the thumbnail size
-        pos = {k: (v[0] // downsample_factor, v[1] // downsample_factor) for k, v in pos.items()}
 
         plt.imshow(wsi_image, alpha=0.8)  # Use default colormap for H&E images
         nx.draw(
@@ -120,7 +115,7 @@ def visualize_graph(name_wsi, graph, wsi_image_path=None):
             pos, 
             node_size=5,  # Size of the nodes
             node_color='black',  # Color of the nodes
-            edge_color='cyan',  # Color of the edges
+            edge_color='blue',  # Color of the edges
             alpha=0.7,  # Transparency of the graph
             width=0.5,  # Width of the edges
             with_labels=False,  # Do not show the labels
@@ -140,7 +135,7 @@ wsi_name_to_visualize = 'Subset2_Train_19'
 print(f"Visualizing graph for WSI: {wsi_name_to_visualize}")
 
 # Path to the WSI image file
-wsi_image_path = f"/mnt/dmif-nas/MITEL/challenges/AGGC22/ProMaL/slides/{wsi_name_to_visualize}try1.tiff"
+wsi_image_path = f"/mnt/dmif-nas/MITEL/challenges/AGGC22/ProMaL/slides/{wsi_name_to_visualize}.tiff"
 visualize_graph(wsi_name_to_visualize, graphs[wsi_name_to_visualize], wsi_image_path=wsi_image_path)
 
 print("done")
