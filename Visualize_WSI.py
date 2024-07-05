@@ -50,7 +50,7 @@ def visualize_image(file_path, save_dir):
     slide.close()
     print(f"Saved image to {save_path}")
 
-visualize_image("/mnt/dmif-nas/MITEL/challenges/AGGC22/ProMaL/slides/Subset1_Train_9.tiff","/home/akebli/test5/try/")
+visualize_image("/mnt/dmif-nas/MITEL/challenges/AGGC22/ProMaL/slides/Subset2_Train_34.tiff","/home/akebli/test5/try/")
 
 
 #print(len(path_masks_train))
