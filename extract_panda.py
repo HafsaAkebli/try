@@ -11,9 +11,9 @@ copy_path = '/mnt/dmif-nas/MITEL/challenges/panda_dataset'
 os.makedirs(extract_path, exist_ok=True)
 
 # Extract the zip file
-with zipfile.ZipFile(zip_file_path, 'r') as z:
-    z.extractall(path=extract_path)
-print("Extraction and copying completed")
+#with zipfile.ZipFile(zip_file_path, 'r') as z:
+ #   z.extractall(path=extract_path)
+#print("Extraction and copying completed")
 
 # Copy the extracted folder to the new location
 shutil.copytree(extract_path, copy_path)
