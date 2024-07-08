@@ -142,13 +142,13 @@ def visualize_graph(name_wsi, graph, wsi_image_path=None):
         plt.title(f"Graph for WSI: {name_wsi}")
 
         # Save the figure
-        figure_save_path = f"/home/akebli/test5/try/graph_{name_wsi}_3.png"
+        figure_save_path = f"/home/akebli/test5/try/graph_{name_wsi}_1.png"
         plt.savefig(figure_save_path, bbox_inches='tight')  # Save with tight bounding box
         plt.show()
         print(f"Graph for WSI {name_wsi} saved to {figure_save_path}")
 
 # Select a WSI ID to visualize
-wsi_name_to_visualize = 'Subset1_Train_49'
+wsi_name_to_visualize = 'Subset3_Train_8_Akoya'
 print(f"Visualizing graph for WSI: {wsi_name_to_visualize}")
 
 # Path to the WSI image file
