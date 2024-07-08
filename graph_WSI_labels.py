@@ -107,7 +107,7 @@ class_colors = {
 
 # Visualize one WSI graph
 def visualize_graph(name_wsi, graph, wsi_image_path=None):
-    #Visualize the KNN graph on top of the WSI image.
+    """Visualize the KNN graph on top of the WSI image."""
     if wsi_image_path:
         # Open the whole slide image using openslide
         slide = openslide.OpenSlide(wsi_image_path)
@@ -115,7 +115,7 @@ def visualize_graph(name_wsi, graph, wsi_image_path=None):
         # Get the full resolution of the image
         slide_dim = slide.dimensions
 
-        # Create a matplotlib figure
+        # Create a matplotlib figure with a fixed size
         plt.figure(figsize=(50, 50))
 
         # Get the WSI image at full resolution
