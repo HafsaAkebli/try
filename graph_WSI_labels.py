@@ -96,13 +96,13 @@ def build_graph_for_wsi(wsi_patches, k=5):
 graphs = build_graph_for_wsi(wsi_patches)
 print(f"Graphs have been built for {len(graphs)} WSIs.")
 
-# Define colors for each class
+# Define colors for each class, using darker shades
 class_colors = {
-    'G3': 'pink',
-    'G4': 'green',
-    'G5': 'red',
-    'Stroma': 'yellow',
-    'Normal': 'purple'
+    'G3': 'darkred',
+    'G4': 'darkgreen',
+    'G5': 'darkblue',
+    'Stroma': 'darkorange',
+    'Normal': 'darkpurple'
 }
 
 # Visualize one WSI graph
@@ -130,7 +130,7 @@ def visualize_graph(name_wsi, graph, wsi_image_path=None):
         nx.draw(
             graph,
             pos,
-            node_size=30,  # Size of the nodes
+            node_size=50,  # Increase the size of the nodes
             node_color=node_colors,  # Color of the nodes based on class
             edge_color='blue',  # Color of the edges
             alpha=0.6,  # Transparency of the graph
@@ -142,7 +142,7 @@ def visualize_graph(name_wsi, graph, wsi_image_path=None):
         plt.title(f"Graph for WSI: {name_wsi}")
 
         # Save the figure
-        figure_save_path = f"/home/akebli/test5/try/graph_{name_wsi}_2.png"
+        figure_save_path = f"/home/akebli/test5/try/graph_{name_wsi}_3.png"
         plt.savefig(figure_save_path, bbox_inches='tight')  # Save with tight bounding box
         plt.show()
         print(f"Graph for WSI {name_wsi} saved to {figure_save_path}")
