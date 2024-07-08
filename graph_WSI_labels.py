@@ -98,11 +98,11 @@ print(f"Graphs have been built for {len(graphs)} WSIs.")
 
 # Define colors for each class, using darker shades
 class_colors = {
-    'G3': 'darkred',
-    'G4': 'darkgreen',
-    'G5': 'darkblue',
-    'Stroma': 'darkorange',
-    'Normal': 'darkpurple'
+    'G3': 'red',
+    'G4': 'green',
+    'G5': 'blue',
+    'Stroma': 'orange',
+    'Normal': 'purple'
 }
 
 # Visualize one WSI graph
