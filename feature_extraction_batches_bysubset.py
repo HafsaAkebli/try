@@ -93,7 +93,7 @@ def extract_features_from_batches(encoder, dataloader):
 # Iterate over the patch folders for Subset1 and Subset3
 for patch_folder in patch_folders:
     subset_name = os.path.basename(os.path.dirname(patch_folder))  # Get the subset name (e.g., Subset1, Subset3)
-    output_features_file = f"/home/akebli/test5/features_{subset_name}_prostate_medium.npz"
+    output_features_file = f"/home/akebli/test5/features_{subset_name}_train_prostate_medium.npz"
     
     # Create Dataset and DataLoader
     dataset = PatchDataset(patch_folder, transform=preprocess)
