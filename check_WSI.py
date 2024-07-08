@@ -2,7 +2,7 @@ import os
 from collections import defaultdict
 
 # Define the path to the patches directory
-patches_dir = "/home/akebli/test5/patches"
+patches_dir = "/home/akebli/test5/Patches1/Subset1/train"
 
 # Define the categories
 categories = ["G3", "G4", "G5", "Stroma", "Normal"]
