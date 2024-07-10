@@ -136,7 +136,7 @@ def visualize_graph(name_wsi, graph, wsi_image_path=None):
             node_color=node_colors,  # Color of the nodes based on class
             edge_color='blue',  # Color of the edges
             alpha=0.6,  # Transparency of the graph
-            width=0.3,  # Width of the edges
+            width=0.4,  # Width of the edges
             with_labels=False,  # Do not show the labels
             ax=plt.gca()  # Draw on the current axes
         )
@@ -144,7 +144,7 @@ def visualize_graph(name_wsi, graph, wsi_image_path=None):
         plt.title(f"Graph for WSI: {name_wsi}")
 
         # Save the figure
-        figure_save_path = f"/home/akebli/test5/try/graph_{name_wsi}_3.png"
+        figure_save_path = f"/home/akebli/test5/try/graph_{name_wsi}_test.png"
         plt.savefig(figure_save_path, bbox_inches='tight')  # Save with tight bounding box
         plt.show()
         print(f"Graph for WSI {name_wsi} saved to {figure_save_path}")
