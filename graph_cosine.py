@@ -79,7 +79,7 @@ def build_graph_for_wsi(wsi_patches, k=5):
         nn = NearestNeighbors(n_neighbors=k + 1, metric='cosine')
         nn.fit(patch_features)
         #calculate the neighbors of the nodes
-        distances, indices = nn.kneighbors(patch_features)
+        distances, indices = nn.kneighbors(patch_features) #returns the indices of nearest patches* and distances between them
 
         G = nx.Graph()
         for i, patch_path in enumerate(patches):
