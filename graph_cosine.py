@@ -46,7 +46,7 @@ def extract_name_wsi_and_coords(filename):
 
 # Group patches by WSI and extract coordinates
 def organize_patches_by_wsi(patch_paths):
-    """Organize patches into a dictionary by WSI name and extract patch coordinates and labels."""
+    """Organize patches into a dictionary by WSI name and extract patch coordinates and labels and also the paths of these patches"""
     wsi_patches = defaultdict(lambda: {'paths': [], 'coords': [], 'labels': []})
     for patch_path in patch_paths:
         try:
@@ -73,13 +73,13 @@ def build_graph_for_wsi(wsi_patches, k=5):
         labels = data['labels']
         patch_features = np.array([patch_to_feature[patch] for patch in patches])
 
-        # Calculate cosine similarities between the feature vectors of the patches
-        similarities = cosine_similarity(patch_features)
-        # Get the k-nearest neighbors for each patch based on cosine similarity
+        # Initialize NearestNeighbors and fit the model
         nn = NearestNeighbors(n_neighbors=k + 1, metric='cosine')
         nn.fit(patch_features)
-        #calculate the neighbors of the nodes
-        distances, indices = nn.kneighbors(patch_features) #returns the indices of nearest patches* and distances between them
+        distances, indices = nn.kneighbors(patch_features)
+
+        # Calculate cosine similarities
+        similarities = cosine_similarity(patch_features)
 
         G = nx.Graph()
         for i, patch_path in enumerate(patches):
@@ -98,17 +98,17 @@ def build_graph_for_wsi(wsi_patches, k=5):
 graphs = build_graph_for_wsi(wsi_patches)
 print(f"Graphs have been built for {len(graphs)} WSIs.")
 
-# Define colors for each class, using darker shades
+# Define colors for each class, using more distinctive shades
 class_colors = {
     'G3': 'red',
-    'G4': 'green',
-    'G5': 'blue',
-    'Stroma': 'orange',
-    'Normal': 'purple'
+    'G4': 'blue',
+    'G5': 'cyan',
+    'Stroma': 'magenta',
+    'Normal': 'lime'
 }
 
-# Visualize one WSI graph
-def visualize_graph(name_wsi, graph, wsi_image_path=None):
+# Visualize one WSI graph with WSI background
+def visualize_graph_with_wsi(name_wsi, graph, wsi_image_path=None):
     """Visualize the KNN graph on top of the WSI image."""
     if wsi_image_path:
         # Open the whole slide image using openslide
@@ -136,7 +136,7 @@ def visualize_graph(name_wsi, graph, wsi_image_path=None):
             node_color=node_colors,  # Color of the nodes based on class
             edge_color='blue',  # Color of the edges
             alpha=0.6,  # Transparency of the graph
-            width=0.4,  # Width of the edges
+            width=0.3,  # Width of the edges
             with_labels=False,  # Do not show the labels
             ax=plt.gca()  # Draw on the current axes
         )
@@ -144,10 +144,37 @@ def visualize_graph(name_wsi, graph, wsi_image_path=None):
         plt.title(f"Graph for WSI: {name_wsi}")
 
         # Save the figure
-        figure_save_path = f"/home/akebli/test5/try/graph_{name_wsi}_test.png"
+        figure_save_path = f"/home/akebli/test5/try/graph_{name_wsi}_with_wsi.png"
         plt.savefig(figure_save_path, bbox_inches='tight')  # Save with tight bounding box
         plt.show()
         print(f"Graph for WSI {name_wsi} saved to {figure_save_path}")
+
+# Visualize only the graph without WSI background
+def visualize_graph_only(name_wsi, graph):
+    """Visualize only the KNN graph without the WSI image."""
+    plt.figure(figsize=(50, 50))
+    pos = nx.get_node_attributes(graph, 'pos')
+    node_colors = [class_colors[graph.nodes[n]['label']] for n in graph.nodes]
+
+    nx.draw(
+        graph,
+        pos,
+        node_size=50,  # Increase the size of the nodes
+        node_color=node_colors,  # Color of the nodes based on class
+        edge_color='blue',  # Color of the edges
+        alpha=0.6,  # Transparency of the graph
+        width=0.4,  # Width of the edges
+        with_labels=False,  # Do not show the labels
+        ax=plt.gca()  # Draw on the current axes
+    )
+
+    plt.title(f"Graph for WSI: {name_wsi} (Only Graph)")
+
+    # Save the figure
+    figure_save_path = f"/home/akebli/test5/try/graph_{name_wsi}_only_graph_1.png"
+    plt.savefig(figure_save_path, bbox_inches='tight')  # Save with tight bounding box
+    plt.show()
+    print(f"Graph for WSI {name_wsi} (only graph) saved to {figure_save_path}")
 
 # Select a WSI ID to visualize
 wsi_name_to_visualize = 'Subset1_Train_49'
@@ -155,6 +182,11 @@ print(f"Visualizing graph for WSI: {wsi_name_to_visualize}")
 
 # Path to the WSI image file
 wsi_image_path = f"/mnt/dmif-nas/MITEL/challenges/AGGC22/ProMaL/slides/{wsi_name_to_visualize}.tiff"
-visualize_graph(wsi_name_to_visualize, graphs[wsi_name_to_visualize], wsi_image_path=wsi_image_path)
+
+# Visualize with WSI background
+#visualize_graph_with_wsi(wsi_name_to_visualize, graphs[wsi_name_to_visualize], wsi_image_path=wsi_image_path)
+
+# Visualize only the graph
+visualize_graph_only(wsi_name_to_visualize, graphs[wsi_name_to_visualize])
 
 print("done")
