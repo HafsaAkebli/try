@@ -135,28 +135,33 @@ def visualize_graph_with_wsi(name_wsi, graph, wsi_image_path=None):
         plt.show()
         print(f"Graph for WSI {name_wsi} saved to {figure_save_path}")
 
-# Visualize only the graph
-def visualize_graph_only(name_wsi, graph):
-    """Visualize only the KNN graph without the WSI image."""
-    plt.figure(figsize=(50, 50))
-    pos = nx.get_node_attributes(graph, 'pos')
-    node_colors = [class_colors[graph.nodes[n]['label']] for n in graph.nodes]
-    nx.draw(
-        graph,
-        pos,
-        node_size=100,
-        node_color=node_colors,
-        edge_color='cyan',  # Cyan for edges
-        alpha=0.8,
-        width=1.0,
-        with_labels=False,
-        ax=plt.gca()
-    )
-    plt.title(f"Graph for WSI: {name_wsi} (Only Graph)")
-    figure_save_path = f"/home/akebli/test5/try/graph_{name_wsi}_only_graph_2.png"
-    plt.savefig(figure_save_path, bbox_inches='tight')
-    plt.show()
-    print(f"Graph for WSI {name_wsi} (only graph) saved to {figure_save_path}")
+# Visualize only the graph with the same dimensions as the WSI
+def visualize_graph_only(name_wsi, graph, wsi_image_path=None):
+    """Visualize only the KNN graph without the WSI image, keeping the same dimensions."""
+    if wsi_image_path:
+        slide = openslide.OpenSlide(wsi_image_path)
+        slide_dim = slide.dimensions
+        plt.figure(figsize=(50, 50))
+        pos = nx.get_node_attributes(graph, 'pos')
+        plt.xlim(0, slide_dim[0])
+        plt.ylim(slide_dim[1], 0)  # Reverse y-axis to match image coordinates
+        node_colors = [class_colors[graph.nodes[n]['label']] for n in graph.nodes]
+        nx.draw(
+            graph,
+            pos,
+            node_size=100,
+            node_color=node_colors,
+            edge_color='cyan',  # Cyan for edges
+            alpha=0.8,
+            width=1.0,
+            with_labels=False,
+            ax=plt.gca()
+        )
+        plt.title(f"Graph for WSI: {name_wsi} (Only Graph)")
+        figure_save_path = f"/home/akebli/test5/try/graph_{name_wsi}_only_graph_3.png"
+        plt.savefig(figure_save_path, bbox_inches='tight')
+        plt.show()
+        print(f"Graph for WSI {name_wsi} (only graph) saved to {figure_save_path}")
 
 # Select a WSI ID to visualize
 wsi_name_to_visualize = 'Subset1_Train_49'
@@ -164,7 +169,9 @@ print(f"Visualizing graph for WSI: {wsi_name_to_visualize}")
 
 # Path to the WSI image file
 wsi_image_path = f"/mnt/dmif-nas/MITEL/challenges/AGGC22/ProMaL/slides/{wsi_name_to_visualize}.tiff"
+# Visualize the graph with WSI background
 #visualize_graph_with_wsi(wsi_name_to_visualize, graphs[wsi_name_to_visualize], wsi_image_path=wsi_image_path)
-visualize_graph_only(wsi_name_to_visualize, graphs[wsi_name_to_visualize])
+# Visualize the graph alone with same dimensions
+visualize_graph_only(wsi_name_to_visualize, graphs[wsi_name_to_visualize], wsi_image_path=wsi_image_path)
 
-print("done")
+print("Done")
