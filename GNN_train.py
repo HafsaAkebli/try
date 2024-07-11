@@ -25,7 +25,8 @@ print("The number of input dimensions is", input_dim)
 
 # Organize patches by WSI and build graphs using cosine similarity and patches as nodes
 wsi_patches = organize_patches_by_wsi(patch_paths)
-graphs = build_graph_for_wsi(wsi_patches)
+patch_to_feature = {patch_paths[i]: features[i] for i in range(len(patch_paths))}
+graphs = build_graph_for_wsi(wsi_patches, patch_to_feature)
 
 # Define class to index mapping
 class_colors = {
@@ -52,7 +53,10 @@ def convert_graph_to_data(graph, class_labels):
     for edge in graph.edges:
         src, dst = edge
         edge_indices.append((list(graph.nodes).index(src), list(graph.nodes).index(dst)))
-        edge_weights.append(graph[edge]['weight'])
+        if 'weight' in graph.edges[edge]:
+            edge_weights.append(graph.edges[edge]['weight'])
+        else:
+            print(f"Edge {edge} does not have a 'weight' attribute.")
 
     x = torch.tensor(node_features, dtype=torch.float).to(device)
     edge_index = torch.tensor(edge_indices, dtype=torch.long).t().contiguous().to(device)

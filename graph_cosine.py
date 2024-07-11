@@ -64,7 +64,7 @@ wsi_patches = organize_patches_by_wsi(patch_paths)
 print(f"Patches are grouped by WSI: {len(wsi_patches)} WSIs found.")
 
 # Build graph for each WSI
-def build_graph_for_wsi(wsi_patches, k=5):
+def build_graph_for_wsi(wsi_patches, patch_to_feature, k=5):
     """Build a KNN graph for each WSI where edges represent nearest neighbors."""
     graphs = {}
     for wsi_id, data in wsi_patches.items():
@@ -90,6 +90,11 @@ def build_graph_for_wsi(wsi_patches, k=5):
                 # Use cosine similarity as the weight (1 - similarity to convert to distance-like weight)
                 similarity = similarities[i, neighbor_idx]
                 G.add_edge(patch_path, neighbor_patch, weight=(1 - similarity))
+
+        # Check for edges without weights
+        for u, v, data in G.edges(data=True):
+            if 'weight' not in data:
+                print(f"Edge ({u}, {v}) does not have a 'weight' attribute.")
 
         graphs[wsi_id] = G
     return graphs
