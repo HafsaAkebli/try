@@ -144,7 +144,7 @@ def visualize_graph_only(name_wsi, graph, wsi_image_path=None):
         plt.figure(figsize=(50, 50))
         pos = nx.get_node_attributes(graph, 'pos')
         plt.xlim(0, slide_dim[0])
-        plt.ylim(slide_dim[1], 0)  # Reverse y-axis to match image coordinates
+        plt.ylim(0, slide_dim[1]) 
         node_colors = [class_colors[graph.nodes[n]['label']] for n in graph.nodes]
         nx.draw(
             graph,
