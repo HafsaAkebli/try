@@ -108,15 +108,17 @@ class_colors = {
 }
 
 # Visualize one WSI graph with WSI background
-def visualize_graph_with_wsi(name_wsi, graph, wsi_image_path=None):
-    """Visualize the KNN graph on top of the WSI image."""
+def visualize_graph_with_wsi(name_wsi, graph, wsi_image_path=None, alpha=0.5):
+    """Visualize the KNN graph on top of the WSI image with transparency."""
     if wsi_image_path:
         slide = openslide.OpenSlide(wsi_image_path)
         slide_dim = slide.dimensions
         plt.figure(figsize=(50, 50))
-        wsi_image = slide.read_region((0, 0), 0, slide_dim).convert('RGB')
-        pos = nx.get_node_attributes(graph, 'pos')
+        wsi_image = slide.read_region((0, 0), 0, slide_dim).convert('RGBA')  # Convert to RGBA for transparency
+        wsi_image.putalpha(int(alpha * 255))  # Apply transparency
+
         plt.imshow(wsi_image)
+        pos = nx.get_node_attributes(graph, 'pos')
         node_colors = [class_colors[graph.nodes[n]['label']] for n in graph.nodes]
         nx.draw(
             graph,
@@ -134,6 +136,10 @@ def visualize_graph_with_wsi(name_wsi, graph, wsi_image_path=None):
         plt.savefig(figure_save_path, bbox_inches='tight')
         plt.show()
         print(f"Graph for WSI {name_wsi} saved to {figure_save_path}")
+    else:
+        print("No WSI image path provided.")
+
+
 
 # Visualize only the graph with the same dimensions as the WSI
 def visualize_graph_only(name_wsi, graph, wsi_image_path=None):
@@ -142,9 +148,13 @@ def visualize_graph_only(name_wsi, graph, wsi_image_path=None):
         slide = openslide.OpenSlide(wsi_image_path)
         slide_dim = slide.dimensions
         plt.figure(figsize=(50, 50))
+        
+        # Get the graph positions and set the axis limits to match the WSI dimensions
         pos = nx.get_node_attributes(graph, 'pos')
         plt.xlim(0, slide_dim[0])
-        plt.ylim(0, slide_dim[1]) 
+        plt.ylim(slide_dim[1], 0)  # Reverse y-axis to match image coordinates
+        
+        # Ensure the nodes and edges are drawn correctly
         node_colors = [class_colors[graph.nodes[n]['label']] for n in graph.nodes]
         nx.draw(
             graph,
@@ -162,6 +172,9 @@ def visualize_graph_only(name_wsi, graph, wsi_image_path=None):
         plt.savefig(figure_save_path, bbox_inches='tight')
         plt.show()
         print(f"Graph for WSI {name_wsi} (only graph) saved to {figure_save_path}")
+    else:
+        print("No WSI image path provided.")
+
 
 # Select a WSI ID to visualize
 wsi_name_to_visualize = 'Subset1_Train_49'
@@ -170,7 +183,7 @@ print(f"Visualizing graph for WSI: {wsi_name_to_visualize}")
 # Path to the WSI image file
 wsi_image_path = f"/mnt/dmif-nas/MITEL/challenges/AGGC22/ProMaL/slides/{wsi_name_to_visualize}.tiff"
 # Visualize the graph with WSI background
-#visualize_graph_with_wsi(wsi_name_to_visualize, graphs[wsi_name_to_visualize], wsi_image_path=wsi_image_path)
+visualize_graph_with_wsi(wsi_name_to_visualize, graphs[wsi_name_to_visualize], wsi_image_path=wsi_image_path,alpha=0.5)
 # Visualize the graph alone with same dimensions
 visualize_graph_only(wsi_name_to_visualize, graphs[wsi_name_to_visualize], wsi_image_path=wsi_image_path)
 
