@@ -158,7 +158,7 @@ def visualize_graph_only(name_wsi, graph, wsi_image_path=None):
             ax=plt.gca()
         )
         plt.title(f"Graph for WSI: {name_wsi} (Only Graph)")
-        figure_save_path = f"/home/akebli/test5/try/graph_{name_wsi}_only_graph_3.png"
+        figure_save_path = f"/home/akebli/test5/try/graph_{name_wsi}_only_graph.png"
         plt.savefig(figure_save_path, bbox_inches='tight')
         plt.show()
         print(f"Graph for WSI {name_wsi} (only graph) saved to {figure_save_path}")
