@@ -7,7 +7,7 @@ from torch_geometric.loader import DataLoader
 import numpy as np
 from torch_geometric.data import Data
 import networkx as nx
-from graph_cosine import load_features, organize_patches_by_wsi, build_graph_for_wsi
+from build_graphs_cosine import load_features, organize_patches_by_wsi, build_graph_for_wsi
 
 # Define the device to use (GPU if available, otherwise CPU)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
