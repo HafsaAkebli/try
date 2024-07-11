@@ -20,6 +20,7 @@ output_features_files = [f"/home/akebli/test5/features_{subset_name}_train_prost
 print("Loading features...")
 features, labels, patch_paths = load_features(output_features_files)
 features = np.array(features)
+patch_to_feature = dict(zip(patch_paths, features))
 labels = np.array(labels)
 patch_paths = np.array(patch_paths)
 input_dim = features.shape[1]
@@ -28,10 +29,6 @@ print("The number of input dimensions is", input_dim)
 # Organize patches by WSI
 print("Organizing patches by WSI...")
 wsi_patches = organize_patches_by_wsi(patch_paths)
-
-# Create patch to feature mapping
-patch_to_feature = {patch_paths[i]: features[i] for i in range(len(patch_paths))}
-print("Patch to feature mapping created.")
 
 # Build graphs using cosine similarity and patches as nodes
 print("Building graphs...")
