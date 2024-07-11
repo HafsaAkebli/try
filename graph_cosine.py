@@ -177,7 +177,7 @@ def visualize_graph_only(name_wsi, graph, wsi_image_path=None):
 
 
 # Select a WSI ID to visualize
-wsi_name_to_visualize = 'Subset3_Train_8_Akoya_1'
+wsi_name_to_visualize = 'Subset3_Train_8_Akoya'
 print(f"Visualizing graph for WSI: {wsi_name_to_visualize}")
 
 # Path to the WSI image file
