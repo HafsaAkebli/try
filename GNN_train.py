@@ -5,6 +5,7 @@ import torch.nn.functional as F
 from torch_geometric.nn import GCNConv, global_mean_pool
 from torch_geometric.loader import DataLoader
 import numpy as np
+from torch_geometric.data import Data
 import networkx as nx
 from graph_cosine import load_features, organize_patches_by_wsi, build_graph_for_wsi
 
