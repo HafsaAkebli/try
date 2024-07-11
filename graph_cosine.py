@@ -177,13 +177,13 @@ def visualize_graph_only(name_wsi, graph, wsi_image_path=None):
 
 
 # Select a WSI ID to visualize
-wsi_name_to_visualize = 'Subset1_Train_49'
+wsi_name_to_visualize = 'Subset3_Train_8_Akoya_1'
 print(f"Visualizing graph for WSI: {wsi_name_to_visualize}")
 
 # Path to the WSI image file
 wsi_image_path = f"/mnt/dmif-nas/MITEL/challenges/AGGC22/ProMaL/slides/{wsi_name_to_visualize}.tiff"
 # Visualize the graph with WSI background
-visualize_graph_with_wsi(wsi_name_to_visualize, graphs[wsi_name_to_visualize], wsi_image_path=wsi_image_path,alpha=0.5)
+visualize_graph_with_wsi(wsi_name_to_visualize, graphs[wsi_name_to_visualize], wsi_image_path=wsi_image_path,alpha=0.2)
 # Visualize the graph alone with same dimensions
 visualize_graph_only(wsi_name_to_visualize, graphs[wsi_name_to_visualize], wsi_image_path=wsi_image_path)
 
