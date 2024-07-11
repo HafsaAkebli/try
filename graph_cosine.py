@@ -100,7 +100,7 @@ def build_graph_for_wsi(wsi_patches, patch_to_feature, k=5):
     return graphs
 
 # Build graphs for each WSI
-graphs = build_graph_for_wsi(wsi_patches)
+graphs = build_graph_for_wsi(wsi_patches,patch_to_feature)
 print(f"Graphs have been built for {len(graphs)} WSIs.")
 
 # Define colors for each class
