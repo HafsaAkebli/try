@@ -4,7 +4,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 from torch_geometric.nn import GCNConv, global_mean_pool
 from torch_geometric.data import Data, DataLoader
-import graph_cosine
+from graph_cosine import load_features, organize_patches_by_wsi, build_graph_for_wsi
 import numpy as np
 
 # Define the device to use (GPU if available, otherwise CPU)
@@ -16,7 +16,7 @@ subset_names = ['Subset1', 'Subset3']
 output_features_files = [f"/home/akebli/test5/features_{subset_name}_train_prostate_medium.npz" for subset_name in subset_names]
 
 # Load features, labels, and patch paths
-features, labels, patch_paths = graph_cosine.load_features(output_features_files)
+features, labels, patch_paths = load_features(output_features_files)
 features = np.array(features) 
 labels = np.array(labels)
 patch_paths = np.array(patch_paths)
@@ -24,8 +24,8 @@ input_dim = features.shape[1]
 print("The number of input dimensions is", input_dim)
 
 # Organize patches by WSI and build graphs using cosine similarity and patches as nodes
-wsi_patches = graph_cosine.organize_patches_by_wsi(patch_paths)
-graphs = graph_cosine.build_graph_for_wsi(wsi_patches)
+wsi_patches = organize_patches_by_wsi(patch_paths)
+graphs = build_graph_for_wsi(wsi_patches)
 
 # Define class to index mapping
 class_colors = {
