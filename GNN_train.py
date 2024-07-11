@@ -4,7 +4,6 @@ import torch.optim as optim
 import torch.nn.functional as F
 from torch_geometric.nn import GCNConv, global_mean_pool
 from torch_geometric.data import Data, DataLoader
-from graph_cosine import load_features, organize_patches_by_wsi, build_graph_for_wsi
 import numpy as np
 
 # Define the device to use (GPU if available, otherwise CPU)
@@ -14,6 +13,7 @@ print("CUDA is available:", torch.cuda.is_available())
 # Define your output features file (replace with the correct subset names)
 subset_names = ['Subset1', 'Subset3']
 output_features_files = [f"/home/akebli/test5/features_{subset_name}_train_prostate_medium.npz" for subset_name in subset_names]
+from graph_cosine import load_features, organize_patches_by_wsi, build_graph_for_wsi
 
 # Load features, labels, and patch paths
 features, labels, patch_paths = load_features(output_features_files)
