@@ -45,7 +45,8 @@ class_colors = {
     'G4': '#00FF00',  # Bright Green
     'G5': '#0000FF',  # Bright Blue
     'Stroma': '#FFA500',  # Bright Orange
-    'Normal': '#800080'}  # Bright Purple 
+    'Normal': '#800080'  # Bright Purple
+}
 
 class_to_index = {cls: i for i, cls in enumerate(class_colors.keys())}
 print("Class to index mapping created.")
@@ -72,12 +73,12 @@ def convert_graph_to_data(graph, class_labels):
 
     # Convert lists to numpy arrays before creating tensors
     node_features = np.array(node_features)
-    edge_indices = np.array(edge_indices)
+    edge_indices = np.array(edge_indices).T  # Transpose to match PyTorch Geometric's format
     edge_weights = np.array(edge_weights)
 
     x = torch.tensor(node_features, dtype=torch.float).to(device)
-    edge_index = torch.tensor(edge_indices, dtype=torch.long).t().contiguous().to(device)
-    edge_attr = torch.tensor(edge_weights, dtype=torch.float).view(-1, 1).to(device)
+    edge_index = torch.tensor(edge_indices, dtype=torch.long).to(device)
+    edge_attr = torch.tensor(edge_weights, dtype=torch.float).to(device)
     y = torch.tensor(node_labels, dtype=torch.long).to(device)
 
     # Adding batch information
@@ -113,6 +114,7 @@ class GCNModel(nn.Module):
 
     def forward(self, data):
         x, edge_index, edge_attr, batch = data.x, data.edge_index, data.edge_attr, data.batch
+        edge_attr = edge_attr.squeeze()  # Ensure edge_attr is 1D
         x = F.relu(self.conv1(x, edge_index, edge_attr))  # Apply first GCN layer
         x = F.relu(self.conv2(x, edge_index, edge_attr))  # Apply second GCN layer
         x = global_mean_pool(x, batch)  # Global pooling to obtain the graph-level representation
@@ -148,6 +150,6 @@ train(model, loader, criterion, optimizer, epochs=10)
 print("Training completed.")
 
 # Save the trained model
-model_save_path = "/home/akebli/test5/try/gcn_model_1.pth"
+model_save_path = "/home/akebli/test5/try/gcn_model_1_Patches_KNN_Cosine.pth"
 torch.save(model.state_dict(), model_save_path)
 print(f"Model saved to {model_save_path}")
