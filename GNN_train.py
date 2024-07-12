@@ -4,15 +4,16 @@ import torch.optim as optim
 import torch.nn.functional as F
 from torch_geometric.nn import GCNConv, global_mean_pool
 from torch_geometric.loader import DataLoader
-import numpy as np
+import numpy as np 
 from torch_geometric.data import Data
 import networkx as nx
-from build_graphs_cosine import load_features, organize_patches_by_wsi, build_graph_for_wsi
+
 
 # Define the device to use (GPU if available, otherwise CPU)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print("CUDA is available:", torch.cuda.is_available())
 
+from build_graphs_cosine import load_features, organize_patches_by_wsi, build_graph_for_wsi
 # Define your output features file (replace with the correct subset names)
 subset_names = ['Subset1', 'Subset3']
 output_features_files = [f"/home/akebli/test5/features_{subset_name}_train_prostate_medium.npz" for subset_name in subset_names]
@@ -78,7 +79,7 @@ def convert_graph_to_data(graph, class_labels):
 
     x = torch.tensor(node_features, dtype=torch.float).to(device)
     edge_index = torch.tensor(edge_indices, dtype=torch.long).to(device)
-    edge_attr = torch.tensor(edge_weights, dtype=torch.float).view(-1, 1).to(device)
+    edge_attr = torch.tensor(edge_weights, dtype=torch.float).view(-1).to(device)
     y = torch.tensor(node_labels, dtype=torch.long).to(device)
 
     data = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, y=y)
@@ -111,8 +112,9 @@ class GCNModel(nn.Module):
 
     def forward(self, data):
         x, edge_index, edge_attr = data.x, data.edge_index, data.edge_attr
-        x = F.relu(self.conv1(x, edge_index, edge_attr))  # Apply first GCN layer
-        x = F.relu(self.conv2(x, edge_index, edge_attr))  # Apply second GCN layer
+        x = F.relu(self.conv1(x, edge_index, edge_weight=edge_attr))  # Apply first GCN layer
+        x = F.relu(self.conv2(x, edge_index, edge_weight=edge_attr))  # Apply second GCN layer
+        x = global_mean_pool(x, data.batch)  # Global pooling to obtain the graph-level representation
         x = self.fc(x)  # Final classification layer
         return x
 
