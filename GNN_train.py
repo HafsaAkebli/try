@@ -78,13 +78,10 @@ def convert_graph_to_data(graph, class_labels):
 
     x = torch.tensor(node_features, dtype=torch.float).to(device)
     edge_index = torch.tensor(edge_indices, dtype=torch.long).to(device)
-    edge_attr = torch.tensor(edge_weights, dtype=torch.float).to(device)
+    edge_attr = torch.tensor(edge_weights, dtype=torch.float).view(-1, 1).to(device)
     y = torch.tensor(node_labels, dtype=torch.long).to(device)
 
-    # Adding batch information
-    batch = torch.zeros(x.size(0), dtype=torch.long).to(device)  # All nodes in one graph
-
-    data = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, y=y, batch=batch)
+    data = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, y=y)
     return data
 
 # Convert all graphs to PyTorch Geometric Data objects
@@ -101,7 +98,7 @@ data_list = convert_graphs_to_data_list(graphs, class_to_index)
 print("Graphs converted to data list.")
 
 # DataLoader
-loader = DataLoader(data_list, batch_size=32, shuffle=True)
+loader = DataLoader(data_list, batch_size=1, shuffle=True)  # Batch size 1 to process one graph at a time
 print("DataLoader created.")
 
 # Define the GNN model
@@ -113,11 +110,9 @@ class GCNModel(nn.Module):
         self.fc = nn.Linear(hidden_dim, output_dim)   # Final layer for classification
 
     def forward(self, data):
-        x, edge_index, edge_attr, batch = data.x, data.edge_index, data.edge_attr, data.batch
-        edge_attr = edge_attr.squeeze()  # Ensure edge_attr is 1D
+        x, edge_index, edge_attr = data.x, data.edge_index, data.edge_attr
         x = F.relu(self.conv1(x, edge_index, edge_attr))  # Apply first GCN layer
         x = F.relu(self.conv2(x, edge_index, edge_attr))  # Apply second GCN layer
-        x = global_mean_pool(x, batch)  # Global pooling to obtain the graph-level representation
         x = self.fc(x)  # Final classification layer
         return x
 
