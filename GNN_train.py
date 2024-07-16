@@ -2,9 +2,9 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-from torch_geometric.nn import GCNConv, global_mean_pool
+from torch_geometric.nn import GCNConv
 from torch_geometric.loader import DataLoader
-import numpy as np 
+import numpy as np
 from torch_geometric.data import Data
 import networkx as nx
 
@@ -100,8 +100,7 @@ class GCNModel(nn.Module):
         x, edge_index, edge_attr = data.x, data.edge_index, data.edge_attr
         x = F.relu(self.conv1(x, edge_index, edge_weight=edge_attr))
         x = F.relu(self.conv2(x, edge_index, edge_weight=edge_attr))
-        x = global_mean_pool(x, data.batch)  # Global pooling
-        x = self.fc(x)
+        x = self.fc(x)  # No global pooling, maintain node-level predictions
         return x
 
 # Define the model, loss function, and optimizer
@@ -111,7 +110,7 @@ output_dim = len(class_colors)  # Number of classes
 model = GCNModel(input_dim, hidden_dim, output_dim).to(device)
 print("Model initialized.")
 criterion = nn.CrossEntropyLoss()
-print("criterion initialized.")
+print("Criterion initialized.")
 optimizer = optim.Adam(model.parameters(), lr=0.01)
 print("Model, criterion, and optimizer initialized.")
 
@@ -134,7 +133,7 @@ print("Starting training...")
 train(model, loader, criterion, optimizer, epochs=10)
 print("Training completed.")
 
-#Save the trained model
+# Save the trained model
 model_save_path = "/home/akebli/test5/try/gcn_model_1_Patches_KNN_Cosine.pth"
 torch.save(model.state_dict(), model_save_path)
 print(f"Model saved to {model_save_path}")
