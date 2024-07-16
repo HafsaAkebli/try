@@ -54,14 +54,10 @@ print("Class to index mapping created.")
 
 # Convert NetworkX graph to PyTorch Geometric Data object
 def convert_graph_to_data(graph, class_labels):
-    node_features = []
-    node_labels = []
+    node_features = [graph.nodes[node]['feature'] for node in graph.nodes]
+    node_labels = [class_labels[graph.nodes[node]['label']] for node in graph.nodes]
     edge_indices = []
     edge_weights = []
-    
-    for node in graph.nodes:
-        node_features.append(graph.nodes[node]['feature'])
-        node_labels.append(class_labels[graph.nodes[node]['label']])
 
     for edge in graph.edges:
         src, dst = edge
@@ -69,10 +65,10 @@ def convert_graph_to_data(graph, class_labels):
         edge_weights.append(graph.edges[edge]['weight'])
 
     # Convert lists to tensors
-    node_features = torch.tensor(node_features, dtype=torch.float).to(device)
-    edge_indices = torch.tensor(edge_indices, dtype=torch.long).t().contiguous().to(device)
-    edge_weights = torch.tensor(edge_weights, dtype=torch.float).to(device)
-    node_labels = torch.tensor(node_labels, dtype=torch.long).to(device)
+    node_features = torch.tensor(np.array(node_features), dtype=torch.float).to(device)
+    edge_indices = torch.tensor(np.array(edge_indices).T, dtype=torch.long).to(device)
+    edge_weights = torch.tensor(np.array(edge_weights), dtype=torch.float).to(device)
+    node_labels = torch.tensor(np.array(node_labels), dtype=torch.long).to(device)
 
     data = Data(x=node_features, edge_index=edge_indices, edge_attr=edge_weights, y=node_labels)
     return data
@@ -134,11 +130,11 @@ def train(model, data_loader, criterion, optimizer, epochs=10):
             total_loss += loss.item()
         print(f'Epoch {epoch+1}/{epochs}, Loss: {total_loss/len(data_loader):.4f}')
 
-print("Starting training...")
-train(model, loader, criterion, optimizer, epochs=10)
-print("Training completed.")
+#print("Starting training...")
+#train(model, loader, criterion, optimizer, epochs=10)
+#print("Training completed.")
 
 # Save the trained model
-model_save_path = "/home/akebli/test5/try/gcn_model_1_Patches_KNN_Cosine.pth"
-torch.save(model.state_dict(), model_save_path)
-print(f"Model saved to {model_save_path}")
+#model_save_path = "/home/akebli/test5/try/gcn_model_1_Patches_KNN_Cosine.pth"
+#torch.save(model.state_dict(), model_save_path)
+#print(f"Model saved to {model_save_path}")
