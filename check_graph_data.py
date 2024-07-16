@@ -1,9 +1,7 @@
 import torch
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-from torch_geometric.data import Data
 import os
+from torch_geometric.data import Data
 
 # Define the device to use (GPU if available, otherwise CPU)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -83,68 +81,50 @@ print("Converting graphs to data list...")
 data_list = convert_graphs_to_data_list(graphs, class_to_index)
 print("Graphs converted to data list.")
 
-# Define the output directory for saving figures
-output_dir = "/home/akebli/test5/try/"
+# Define a function to check edge weights and node labels
+def check_graph_data(data_list):
+    edge_weight_min = float('inf')
+    edge_weight_max = float('-inf')
+    edge_weight_sum = 0
+    edge_count = 0
+    
+    class_counts = {cls: 0 for cls in class_colors.keys()}  # Initialize counts for each class
 
-# Ensure the directory exists
-if not os.path.exists(output_dir):
-    os.makedirs(output_dir)
-
-# Function to visualize and save node features
-def visualize_node_features(data_list, output_dir):
-    for idx, data in enumerate(data_list):
-        node_features = data.x.cpu().numpy()
-        
-        plt.figure(figsize=(12, 6))
-        plt.title(f'Node Features Distribution for Graph {idx}')
-        sns.histplot(node_features.flatten(), kde=True)
-        plt.xlabel('Feature Value')
-        plt.ylabel('Frequency')
-        plt.savefig(os.path.join(output_dir, f'node_features_distribution_graph_{idx}.png'))
-        plt.close()  # Close the figure to avoid display in notebooks
-        print(f'Node features distribution for Graph {idx} saved to {output_dir}node_features_distribution_graph_{idx}.png')
-
-# Call the function to visualize and save node features
-visualize_node_features(data_list, output_dir)
-
-# Function to inspect edge weights and save the distribution plot
-def inspect_edge_weights(data_list, output_dir):
     for idx, data in enumerate(data_list):
         edge_weights = data.edge_attr.cpu().numpy()
+        node_labels = data.y.cpu().numpy()
         
-        if np.isnan(edge_weights).any() or np.isinf(edge_weights).any():
-            print(f"Graph {idx}: Edge weights contain NaNs or Infs.")
-        else:
-            print(f"Graph {idx}: Edge weights do not contain NaNs or Infs.")
-        
-        print(f"Graph {idx}: Edge weights range: min={edge_weights.min()}, max={edge_weights.max()}")
-        
-        # Visualize the edge weights distribution
-        plt.figure(figsize=(12, 6))
-        plt.title(f'Edge Weights Distribution for Graph {idx}')
-        sns.histplot(edge_weights, kde=True)
-        plt.xlabel('Edge Weight')
-        plt.ylabel('Frequency')
-        plt.savefig(os.path.join(output_dir, f'edge_weights_distribution_graph_{idx}.png'))
-        plt.close()  # Close the figure to avoid display in notebooks
-        print(f'Edge weights distribution for Graph {idx} saved to {output_dir}edge_weights_distribution_graph_{idx}.png')
+        # Update edge weight statistics
+        edge_weight_min = min(edge_weight_min, edge_weights.min())
+        edge_weight_max = max(edge_weight_max, edge_weights.max())
+        edge_weight_sum += edge_weights.sum()
+        edge_count += edge_weights.size
 
-# Call the function to inspect edge weights and save the distribution plots
-inspect_edge_weights(data_list, output_dir)
+        # Update class counts
+        for label in node_labels:
+            class_name = [k for k, v in class_to_index.items() if v == label][0]
+            class_counts[class_name] += 1
 
-# Function to check data consistency and print results
-def check_graph_data_consistency(data_list):
-    for idx, data in enumerate(data_list):
+        # Print data consistency
         print(f"Graph {idx}:")
         print(f"Number of nodes: {data.num_nodes}")
         print(f"Number of edges: {data.num_edges}")
         print(f"Number of features: {data.x.size(1)}")
-        print(f"Edge weights: min={data.edge_attr.min()}, max={data.edge_attr.max()}")
-        print(f"Node labels: min={data.y.min()}, max={data.y.max()}")
+        print(f"Edge weights: min={edge_weights.min()}, max={edge_weights.max()}")
+        print(f"Node labels: min={node_labels.min()}, max={node_labels.max()}")
         print(f"Batch size: {data.batch.size(0)}")  # Should be 1 due to batch_size=1
         print()
 
-# Call the function to check data consistency
-check_graph_data_consistency(data_list)
+    # Print overall statistics
+    edge_weight_mean = edge_weight_sum / edge_count
+    print(f"Overall edge weights: min={edge_weight_min}, max={edge_weight_max}, mean={edge_weight_mean}")
+
+    # Print class distribution
+    print("\nClass Distribution:")
+    for cls, count in class_counts.items():
+        print(f"{cls}: {count} nodes")
+
+# Call the function to check edge weights and node labels
+check_graph_data(data_list)
 
 print("Data inspection completed.")
