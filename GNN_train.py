@@ -8,12 +8,12 @@ import numpy as np
 from torch_geometric.data import Data
 import networkx as nx
 
-
 # Define the device to use (GPU if available, otherwise CPU)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print("CUDA is available:", torch.cuda.is_available())
 
 from build_graphs_cosine import load_features, organize_patches_by_wsi, build_graph_for_wsi
+
 # Define your output features file (replace with the correct subset names)
 subset_names = ['Subset1', 'Subset3']
 output_features_files = [f"/home/akebli/test5/features_{subset_name}_train_prostate_medium.npz" for subset_name in subset_names]
@@ -54,40 +54,31 @@ print("Class to index mapping created.")
 
 # Convert NetworkX graph to PyTorch Geometric Data object
 def convert_graph_to_data(graph, class_labels):
-    """Convert a NetworkX graph to a PyTorch Geometric Data object."""
     node_features = []
+    node_labels = []
     edge_indices = []
     edge_weights = []
-    node_labels = []
-
-    for i, node in enumerate(graph.nodes):
+    
+    for node in graph.nodes:
         node_features.append(graph.nodes[node]['feature'])
         node_labels.append(class_labels[graph.nodes[node]['label']])
 
     for edge in graph.edges:
         src, dst = edge
         edge_indices.append((list(graph.nodes).index(src), list(graph.nodes).index(dst)))
-        if 'weight' in graph.edges[edge]:
-            edge_weights.append(graph.edges[edge]['weight'])
-        else:
-            print(f"Edge {edge} does not have a 'weight' attribute.")
+        edge_weights.append(graph.edges[edge]['weight'])
 
-    # Convert lists to numpy arrays before creating tensors
-    node_features = np.array(node_features)
-    edge_indices = np.array(edge_indices).T  # Transpose to match PyTorch Geometric's format
-    edge_weights = np.array(edge_weights)
+    # Convert lists to tensors
+    node_features = torch.tensor(node_features, dtype=torch.float).to(device)
+    edge_indices = torch.tensor(edge_indices, dtype=torch.long).t().contiguous().to(device)
+    edge_weights = torch.tensor(edge_weights, dtype=torch.float).to(device)
+    node_labels = torch.tensor(node_labels, dtype=torch.long).to(device)
 
-    x = torch.tensor(node_features, dtype=torch.float).to(device)
-    edge_index = torch.tensor(edge_indices, dtype=torch.long).to(device)
-    edge_attr = torch.tensor(edge_weights, dtype=torch.float).view(-1).to(device)
-    y = torch.tensor(node_labels, dtype=torch.long).to(device)
-
-    data = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, y=y)
+    data = Data(x=node_features, edge_index=edge_indices, edge_attr=edge_weights, y=node_labels)
     return data
 
 # Convert all graphs to PyTorch Geometric Data objects
 def convert_graphs_to_data_list(graphs, class_labels):
-    """Convert all NetworkX graphs to a list of PyTorch Geometric Data objects."""
     data_list = []
     for graph in graphs.values():
         data = convert_graph_to_data(graph, class_labels)
@@ -99,23 +90,22 @@ data_list = convert_graphs_to_data_list(graphs, class_to_index)
 print("Graphs converted to data list.")
 
 # DataLoader
-loader = DataLoader(data_list, batch_size=1, shuffle=True)  # Batch size 1 to process one graph at a time
+loader = DataLoader(data_list, batch_size=1, shuffle=True)
 print("DataLoader created.")
 
-# Define the GNN model
 class GCNModel(nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim):
         super(GCNModel, self).__init__()
-        self.conv1 = GCNConv(input_dim, hidden_dim)  # First layer of GCN
-        self.conv2 = GCNConv(hidden_dim, hidden_dim)  # Second layer of GCN
-        self.fc = nn.Linear(hidden_dim, output_dim)   # Final layer for classification
+        self.conv1 = GCNConv(input_dim, hidden_dim)
+        self.conv2 = GCNConv(hidden_dim, hidden_dim)
+        self.fc = nn.Linear(hidden_dim, output_dim)
 
     def forward(self, data):
         x, edge_index, edge_attr = data.x, data.edge_index, data.edge_attr
-        x = F.relu(self.conv1(x, edge_index, edge_weight=edge_attr))  # Apply first GCN layer
-        x = F.relu(self.conv2(x, edge_index, edge_weight=edge_attr))  # Apply second GCN layer
-        x = global_mean_pool(x, data.batch)  # Global pooling to obtain the graph-level representation
-        x = self.fc(x)  # Final classification layer
+        x = F.relu(self.conv1(x, edge_index, edge_weight=edge_attr))
+        x = F.relu(self.conv2(x, edge_index, edge_weight=edge_attr))
+        x = global_mean_pool(x, data.batch)  # Global pooling
+        x = self.fc(x)
         return x
 
 # Define the model, loss function, and optimizer
@@ -123,7 +113,9 @@ hidden_dim = 64  # Hidden layer dimension
 output_dim = len(class_colors)  # Number of classes
 
 model = GCNModel(input_dim, hidden_dim, output_dim).to(device)
+print("Model initialized.")
 criterion = nn.CrossEntropyLoss()
+print("criterion initialized.")
 optimizer = optim.Adam(model.parameters(), lr=0.01)
 print("Model, criterion, and optimizer initialized.")
 
