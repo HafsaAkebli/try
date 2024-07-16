@@ -130,11 +130,11 @@ def train(model, data_loader, criterion, optimizer, epochs=10):
             total_loss += loss.item()
         print(f'Epoch {epoch+1}/{epochs}, Loss: {total_loss/len(data_loader):.4f}')
 
-#print("Starting training...")
-#train(model, loader, criterion, optimizer, epochs=10)
-#print("Training completed.")
+print("Starting training...")
+train(model, loader, criterion, optimizer, epochs=10)
+print("Training completed.")
 
-# Save the trained model
-#model_save_path = "/home/akebli/test5/try/gcn_model_1_Patches_KNN_Cosine.pth"
-#torch.save(model.state_dict(), model_save_path)
-#print(f"Model saved to {model_save_path}")
+#Save the trained model
+model_save_path = "/home/akebli/test5/try/gcn_model_1_Patches_KNN_Cosine.pth"
+torch.save(model.state_dict(), model_save_path)
+print(f"Model saved to {model_save_path}")
