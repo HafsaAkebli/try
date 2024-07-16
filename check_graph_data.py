@@ -1,7 +1,7 @@
 import torch
 import numpy as np
-import os
 from torch_geometric.data import Data
+import os
 
 # Define the device to use (GPU if available, otherwise CPU)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -22,6 +22,12 @@ labels = np.array(labels)
 patch_paths = np.array(patch_paths)
 input_dim = features.shape[1]
 print("The number of input dimensions is", input_dim)
+
+# Normalize the features
+from sklearn.preprocessing import StandardScaler
+
+scaler = StandardScaler()
+features = scaler.fit_transform(features)
 
 # Organize patches by WSI
 print("Organizing patches by WSI...")
@@ -81,50 +87,70 @@ print("Converting graphs to data list...")
 data_list = convert_graphs_to_data_list(graphs, class_to_index)
 print("Graphs converted to data list.")
 
-# Define a function to check edge weights and node labels
+# Function to check edge weights, node features, and node labels
 def check_graph_data(data_list):
-    edge_weight_min = float('inf')
-    edge_weight_max = float('-inf')
-    edge_weight_sum = 0
-    edge_count = 0
-    
+    overall_edge_weight_min = float('inf')
+    overall_edge_weight_max = float('-inf')
+    overall_edge_weight_sum = 0
+    overall_edge_weight_count = 0
+
+    overall_feature_min = float('inf')
+    overall_feature_max = float('-inf')
+    overall_feature_sum = 0
+    overall_feature_count = 0
+
     class_counts = {cls: 0 for cls in class_colors.keys()}  # Initialize counts for each class
 
     for idx, data in enumerate(data_list):
         edge_weights = data.edge_attr.cpu().numpy()
+        node_features = data.x.cpu().numpy()
         node_labels = data.y.cpu().numpy()
-        
+
+        # Check for NaNs and Infs in edge weights and node features
+        if np.isnan(edge_weights).any() or np.isinf(edge_weights).any():
+            print(f"Graph {idx}: Edge weights contain NaNs or Infs.")
+        if np.isnan(node_features).any() or np.isinf(node_features).any():
+            print(f"Graph {idx}: Node features contain NaNs or Infs.")
+
         # Update edge weight statistics
-        edge_weight_min = min(edge_weight_min, edge_weights.min())
-        edge_weight_max = max(edge_weight_max, edge_weights.max())
-        edge_weight_sum += edge_weights.sum()
-        edge_count += edge_weights.size
+        overall_edge_weight_min = min(overall_edge_weight_min, edge_weights.min())
+        overall_edge_weight_max = max(overall_edge_weight_max, edge_weights.max())
+        overall_edge_weight_sum += edge_weights.sum()
+        overall_edge_weight_count += edge_weights.size
+
+        # Update node feature statistics
+        overall_feature_min = min(overall_feature_min, node_features.min())
+        overall_feature_max = max(overall_feature_max, node_features.max())
+        overall_feature_sum += node_features.sum()
+        overall_feature_count += node_features.size
 
         # Update class counts
         for label in node_labels:
             class_name = [k for k, v in class_to_index.items() if v == label][0]
             class_counts[class_name] += 1
 
-        # Print data consistency
+        # Print data consistency for each graph
         print(f"Graph {idx}:")
         print(f"Number of nodes: {data.num_nodes}")
         print(f"Number of edges: {data.num_edges}")
         print(f"Number of features: {data.x.size(1)}")
         print(f"Edge weights: min={edge_weights.min()}, max={edge_weights.max()}")
+        print(f"Node features: min={node_features.min()}, max={node_features.max()}")
         print(f"Node labels: min={node_labels.min()}, max={node_labels.max()}")
-        print(f"Batch size: {data.batch.size(0)}")  # Should be 1 due to batch_size=1
         print()
 
     # Print overall statistics
-    edge_weight_mean = edge_weight_sum / edge_count
-    print(f"Overall edge weights: min={edge_weight_min}, max={edge_weight_max}, mean={edge_weight_mean}")
+    overall_edge_weight_mean = overall_edge_weight_sum / overall_edge_weight_count
+    overall_feature_mean = overall_feature_sum / overall_feature_count
+    print(f"Overall edge weights: min={overall_edge_weight_min}, max={overall_edge_weight_max}, mean={overall_edge_weight_mean}")
+    print(f"Overall node features: min={overall_feature_min}, max={overall_feature_max}, mean={overall_feature_mean}")
 
     # Print class distribution
     print("\nClass Distribution:")
     for cls, count in class_counts.items():
         print(f"{cls}: {count} nodes")
 
-# Call the function to check edge weights and node labels
+# Call the function to check edge weights, node features, and node labels
 check_graph_data(data_list)
 
 print("Data inspection completed.")
