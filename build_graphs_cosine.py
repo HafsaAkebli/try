@@ -101,12 +101,3 @@ def build_graph_for_wsi(wsi_patches, patch_to_feature, k=5):
 graphs = build_graph_for_wsi(wsi_patches,patch_to_feature)
 print(f"Graphs have been built for {len(graphs)} WSIs.")
 
-# Define colors for each class
-class_colors = {
-    'G3': '#FF0000',  # Bright Red
-    'G4': '#00FF00',  # Bright Green
-    'G5': '#0000FF',  # Bright Blue
-    'Stroma': '#FFA500',  # Bright Orange
-    'Normal': '#800080'  # Bright Purple
-}
-
