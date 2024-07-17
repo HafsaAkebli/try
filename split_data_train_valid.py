@@ -10,6 +10,8 @@ import networkx as nx
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 from sklearn.model_selection import train_test_split
+from collections import defaultdict
+import random
 
 # Define the device to use (GPU if available, otherwise CPU)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -102,6 +104,22 @@ print("Converting graphs to data list...")
 data_list = convert_graphs_to_data_list(graphs, class_to_index)
 print("Graphs converted to data list.")
 
+
+# Organize data by WSI
+wsi_data = defaultdict(list)
+for graph, wsi in zip(data_list, wsi_patches.keys()):
+    wsi_data[wsi].append(graph)
+
+# Split WSI into training and validation sets
+wsi_keys = list(wsi_patches.keys())
+random.shuffle(wsi_keys)
+split_idx = int(len(wsi_keys) * 0.8)
+train_wsis = wsi_keys[:split_idx]
+val_wsis = wsi_keys[split_idx:]
+
+train_data = [graph for wsi in train_wsis for graph in wsi_data[wsi]]
+val_data = [graph for wsi in val_wsis for graph in wsi_data[wsi]]
+
 # Split data into training and validation sets
 train_data, val_data = train_test_split(data_list, test_size=0.2, random_state=42)
 train_loader = DataLoader(train_data, batch_size=1, shuffle=True)
@@ -136,33 +154,6 @@ print("Criterion initialized.")
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 print("Model, criterion, and optimizer initialized.")
 
-# Training loop
-def train(model, data_loader, criterion, optimizer, epochs=10):
-    model.train()
-    for epoch in range(epochs):
-        total_loss = 0
-        for data in data_loader:
-            optimizer.zero_grad()
-            data = data.to(device)  # Move data to GPU
-            out = model(data)
-            loss = criterion(out, data.y)
-            if torch.isnan(loss):
-                print("Loss is NaN!")
-                return
-            loss.backward()
-            optimizer.step()
-            total_loss += loss.item()
-        print(f'Epoch {epoch+1}/{epochs}, Loss: {total_loss/len(data_loader):.4f}')
-
-print("Starting training...")
-train(model, train_loader, criterion, optimizer, epochs=10)
-print("Training completed.")
-
-# Save the trained model
-model_save_path = "/home/akebli/test5/try/gcn_model_3_Patches_KNN_Cosine.pth"
-torch.save(model.state_dict(), model_save_path)
-print(f"Model saved to {model_save_path}")
-
 # Validate the model on the validation set
 def validate(model, val_loader):
     model.eval()
@@ -181,6 +172,39 @@ def validate(model, val_loader):
     print(f'Validation Precision: {precision:.4f}')
     print(f'Validation Recall: {recall:.4f}')
     print(f'Validation F1 Score: {f1:.4f}')
+    return accuracy, precision, recall, f1
 
-# Ensure validate function is called in the correct place
-validate(model, val_loader)
+# Training loop
+def train(model, train_loader, val_loader, criterion, optimizer, epochs=10):
+    best_f1 = 0  # Best F1 score for model saving
+    for epoch in range(epochs):
+        model.train()
+        total_loss = 0
+        for data in train_loader:
+            optimizer.zero_grad()
+            data = data.to(device)  # Move data to GPU
+            out = model(data)
+            loss = criterion(out, data.y)
+            if torch.isnan(loss):
+                print("Loss is NaN!")
+                return
+            loss.backward()
+            optimizer.step()
+            total_loss += loss.item()
+        print(f'Epoch {epoch+1}/{epochs}, Loss: {total_loss/len(train_loader):.4f}')
+        accuracy, precision, recall, f1 = validate(model, val_loader)
+        # Save the model if validation F1 score improves
+        if f1 > best_f1:
+            best_f1 = f1
+            model_save_path = "/home/akebli/test5/try/gcn_model_3_Patches_KNN_Cosine_best.pth"
+            torch.save(model.state_dict(), model_save_path)
+            print(f"Model saved to {model_save_path}")
+
+print("Starting training...")
+train(model, train_loader, val_loader, criterion, optimizer, epochs=10)
+print("Training completed.")
+
+# Save the final trained model
+model_save_path = "/home/akebli/test5/try/gcn_model_4_Patches_KNN_Cosine_final.pth"
+torch.save(model.state_dict(), model_save_path)
+print(f"Final model saved to {model_save_path}")
