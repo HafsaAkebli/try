@@ -7,6 +7,7 @@ from torch_geometric.loader import DataLoader
 import numpy as np
 from torch_geometric.data import Data
 import networkx as nx
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
 # Define the device to use (GPU if available, otherwise CPU)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -19,7 +20,7 @@ subset_names = ['Subset1', 'Subset3']
 output_features_files = [f"/home/akebli/test5/features_{subset_name}_train_prostate_medium.npz" for subset_name in subset_names]
 
 # Load features, labels, and patch paths
-print("Loading features...")
+print("Loading features extracted by histoencoder...")
 features, labels, patch_paths = load_features(output_features_files)
 features = np.array(features)
 labels = np.array(labels)
@@ -27,7 +28,11 @@ patch_paths = np.array(patch_paths)
 input_dim = features.shape[1]
 print("The number of input dimensions is", input_dim)
 
-# Organize patches by WSI
+# Normalize the node features
+scaler = StandardScaler()
+features = scaler.fit_transform(features) #standardize features with zero mean and unit variance
+
+# Group Patches by WSI
 print("Organizing patches by WSI...")
 wsi_patches = organize_patches_by_wsi(patch_paths)
 
@@ -52,6 +57,13 @@ class_colors = {
 class_to_index = {cls: i for i, cls in enumerate(class_colors.keys())}
 print("Class to index mapping created.")
 
+# Preprocess edge weights
+def preprocess_edge_weights(weights):
+    scaler = MinMaxScaler(feature_range=(0, 1))  # Rescale weights to [0, 1]
+    weights = np.array(weights).reshape(-1, 1)  # Convert to 2D array
+    weights = scaler.fit_transform(weights).flatten()  # Rescale and flatten
+    return weights
+
 # Convert NetworkX graph to PyTorch Geometric Data object
 def convert_graph_to_data(graph, class_labels):
     node_features = [graph.nodes[node]['feature'] for node in graph.nodes]
@@ -63,6 +75,9 @@ def convert_graph_to_data(graph, class_labels):
         src, dst = edge
         edge_indices.append((list(graph.nodes).index(src), list(graph.nodes).index(dst)))
         edge_weights.append(graph.edges[edge]['weight'])
+
+    # Preprocess edge weights
+    edge_weights = preprocess_edge_weights(edge_weights)
 
     # Convert lists to tensors
     node_features = torch.tensor(np.array(node_features), dtype=torch.float).to(device)
@@ -89,6 +104,7 @@ print("Graphs converted to data list.")
 loader = DataLoader(data_list, batch_size=1, shuffle=True)
 print("DataLoader created.")
 
+# Define the GCN model
 class GCNModel(nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim):
         super(GCNModel, self).__init__()
@@ -124,6 +140,9 @@ def train(model, data_loader, criterion, optimizer, epochs=10):
             data = data.to(device)  # Move data to GPU
             out = model(data)
             loss = criterion(out, data.y)
+            if torch.isnan(loss):
+                print("Loss is NaN!")
+                return
             loss.backward()
             optimizer.step()
             total_loss += loss.item()
@@ -134,6 +153,6 @@ train(model, loader, criterion, optimizer, epochs=10)
 print("Training completed.")
 
 # Save the trained model
-model_save_path = "/home/akebli/test5/try/gcn_model_1_Patches_KNN_Cosine.pth"
+model_save_path = "/home/akebli/test5/try/gcn_model_2_Patches_KNN_Cosine.pth"
 torch.save(model.state_dict(), model_save_path)
 print(f"Model saved to {model_save_path}")
