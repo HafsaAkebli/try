@@ -111,7 +111,7 @@ model = GCNModel(input_dim, hidden_dim, output_dim).to(device)
 print("Model initialized.")
 criterion = nn.CrossEntropyLoss()
 print("Criterion initialized.")
-optimizer = optim.Adam(model.parameters(), lr=0.01)
+optimizer = optim.Adam(model.parameters(), lr=0.001)
 print("Model, criterion, and optimizer initialized.")
 
 # Training loop
