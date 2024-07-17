@@ -201,7 +201,7 @@ def train(model, train_loader, val_loader, criterion, optimizer, epochs=10):
             print(f"Model saved to {model_save_path}")
 
 print("Starting training...")
-train(model, train_loader, val_loader, criterion, optimizer, epochs=10)
+train(model, train_loader, val_loader, criterion, optimizer, epochs=100)
 print("Training completed.")
 
 # Save the final trained model
