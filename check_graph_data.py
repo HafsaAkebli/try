@@ -129,16 +129,6 @@ def check_graph_data(data_list):
             class_name = [k for k, v in class_to_index.items() if v == label][0]
             class_counts[class_name] += 1
 
-        # Print data consistency for each graph
-        print(f"Graph {idx}:")
-        print(f"Number of nodes: {data.num_nodes}")
-        print(f"Number of edges: {data.num_edges}")
-        print(f"Number of features: {data.x.size(1)}")
-        print(f"Edge weights: min={edge_weights.min()}, max={edge_weights.max()}")
-        print(f"Node features: min={node_features.min()}, max={node_features.max()}")
-        print(f"Node labels: min={node_labels.min()}, max={node_labels.max()}")
-        print()
-
     # Print overall statistics
     overall_edge_weight_mean = overall_edge_weight_sum / overall_edge_weight_count
     overall_feature_mean = overall_feature_sum / overall_feature_count
