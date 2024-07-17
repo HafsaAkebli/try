@@ -176,7 +176,7 @@ def validate(model, val_loader):
             all_labels.extend(data.y.cpu().numpy())
             all_preds.extend(preds.cpu().numpy())
     accuracy = accuracy_score(all_labels, all_preds)
-    precision, recall, f1, _ = precision_recall_fscore_support(all_labels, all_preds, average='weighted')
+    precision, recall, f1, _ = precision_recall_fscore_support(all_labels, all_preds, average='weighted', zero_division=0)
     print(f'Validation Accuracy: {accuracy:.4f}')
     print(f'Validation Precision: {precision:.4f}')
     print(f'Validation Recall: {recall:.4f}')
