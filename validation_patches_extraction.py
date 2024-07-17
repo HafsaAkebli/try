@@ -16,10 +16,6 @@ tiles_list_file = "/home/akebli/test5/try/tiles_list_valid.txt"
 source_folder = "/mnt/dmif-nas/MITEL/challenges/AGGC22/ProMaL/slides"
 destination_folder = "/home/akebli/test5/Patches1/"
 
-# Create directories for each class if they don't exist
-for cls in ["G3", "G4", "G5", "Stroma", "Normal"]:
-    os.makedirs(os.path.join(destination_folder, cls), exist_ok=True)
-
 # Read the list of tiles (text file), store the rows in a list
 tiles = []
 with open(tiles_list_file, 'r') as tilefile:
