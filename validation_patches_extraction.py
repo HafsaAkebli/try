@@ -12,9 +12,9 @@ stride = 250  # Step for the sliding window
 
 # Input and output paths
 maindir = "/mnt/dmif-nas/MITEL/challenges/AGGC22/ProMaL/resized-masks/valid/"
-tiles_list_file = "/home/akebli/test5/try/tiles_list1.txt"
+tiles_list_file = "/home/akebli/test5/try/tiles_list_valid.txt"
 source_folder = "/mnt/dmif-nas/MITEL/challenges/AGGC22/ProMaL/slides"
-destination_folder = "/home/akebli/test5/patches/"
+destination_folder = "/home/akebli/test5/Patches1/"
 
 # Create directories for each class if they don't exist
 for cls in ["G3", "G4", "G5", "Stroma", "Normal"]:
@@ -33,6 +33,7 @@ for t in tiles:
     cls = t[1]  # Class of the patch
     x = int(t[2])  # X-coordinate of the patch
     y = int(t[3])  # Y-coordinate of the patch
+    subset = img_name.split('_')[0]  # Extract subset from the image name
 
     # Construct the path to the WSI file
     wsi_path = os.path.join(source_folder, img_name + ".tiff")
@@ -64,9 +65,13 @@ for t in tiles:
     tile_image = tile_image.convert("RGB")
     tile_image_resized = tile_image.resize((224, 224))
 
-    # Save the resized tile to destination folder
+    # Create the directory for the subset and class if it doesn't exist
+    subset_class_dir = os.path.join(destination_folder, subset, "valid", cls)
+    os.makedirs(subset_class_dir, exist_ok=True)
+
+    # Save the resized tile
     tile_filename = f"{img_name}-{x}-{y}.jpg"
-    tile_path = os.path.join(destination_folder, cls, tile_filename)
+    tile_path = os.path.join(subset_class_dir, tile_filename)
     tile_image_resized.save(tile_path)
 
     # Close the WSI
