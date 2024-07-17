@@ -153,7 +153,6 @@ def train(model, data_loader, criterion, optimizer, epochs=10):
             optimizer.step()
             total_loss += loss.item()
         print(f'Epoch {epoch+1}/{epochs}, Loss: {total_loss/len(data_loader):.4f}')
-        validate(model, val_loader)  # Add validation step after every epoch
 
 print("Starting training...")
 train(model, train_loader, criterion, optimizer, epochs=10)
