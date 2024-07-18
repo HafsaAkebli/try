@@ -206,7 +206,7 @@ def train(model, train_loader, val_loader, criterion, optimizer, epochs=20):
         # Save the model if validation F1 score improves
         if f1 > best_f1:
             best_f1 = f1
-            model_save_path = "/home/akebli/test5/try/gcn_model_best.pth"
+            model_save_path = "/home/akebli/test5/try/gcn_model_best_1.pth"
             torch.save(model.state_dict(), model_save_path)
             print(f"Model saved to {model_save_path}")
 
