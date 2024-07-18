@@ -12,6 +12,7 @@ Image.MAX_IMAGE_PIXELS = None
 # Define your output features file (replace with the correct subset names)
 subset_names = ['Subset1', 'Subset3']
 output_features_files = [f"/home/akebli/test5/features_{subset_name}_train_prostate_medium.npz" for subset_name in subset_names]
+validation_features_files = [f"/home/akebli/test5/features_{subset_name}_valid_prostate_medium.npz" for subset_name in subset_names]
 
 # Function to load features, labels, and patch paths from multiple files
 def load_features(files):
@@ -26,12 +27,16 @@ def load_features(files):
     return np.concatenate(features), np.concatenate(labels), np.concatenate(patch_paths)
 
 # Load the .npz files containing features, labels, and patch paths
-features, labels, patch_paths = load_features(output_features_files)
+train_features, train_labels, train_patch_paths = load_features(output_features_files)
+valid_features, valid_labels, valid_patch_paths = load_features(validation_features_files)
 
 # Create a mapping from patch path to feature vector
-patch_to_feature = dict(zip(patch_paths, features))
+train_patch_to_feature = dict(zip(train_patch_paths, train_features))
+valid_patch_to_feature = dict(zip(valid_patch_paths, valid_features))
+
 # Create a mapping from patch path to the patch label or class
-patch_to_label = dict(zip(patch_paths, labels))
+train_patch_to_label = dict(zip(train_patch_paths, train_labels))
+valid_patch_to_label = dict(zip(valid_patch_paths, valid_labels))
 
 # Extract WSI name and coordinates from patch paths
 def extract_name_wsi_and_coords(filename):
@@ -43,7 +48,7 @@ def extract_name_wsi_and_coords(filename):
     return wsi_id, x, y
 
 # Group patches by WSI and extract coordinates
-def organize_patches_by_wsi(patch_paths):
+def organize_patches_by_wsi(patch_paths, patch_to_label):
     """Organize patches into a dictionary by WSI name and extract patch coordinates and labels and also the paths of these patches"""
     wsi_patches = defaultdict(lambda: {'paths': [], 'coords': [], 'labels': []})
     for patch_path in patch_paths:
@@ -55,11 +60,13 @@ def organize_patches_by_wsi(patch_paths):
             wsi_patches[wsi_name]['coords'].append((centroid_x, centroid_y))
             wsi_patches[wsi_name]['labels'].append(patch_to_label[patch_path])
         except Exception as e:
-            print(f"Skipping patch due to error: {e}")
+            print(f"Skipping patch due to error: {patch_path}, Error: {e}")
     return wsi_patches
 
-wsi_patches = organize_patches_by_wsi(patch_paths)
-print(f"Patches are grouped by WSI: {len(wsi_patches)} WSIs found.")
+train_wsi_patches = organize_patches_by_wsi(train_patch_paths, train_patch_to_label)
+valid_wsi_patches = organize_patches_by_wsi(valid_patch_paths, valid_patch_to_label)
+print(f"Training patches are grouped by WSI: {len(train_wsi_patches)} WSIs found.")
+print(f"Validation patches are grouped by WSI: {len(valid_wsi_patches)} WSIs found.")
 
 # Build graph for each WSI
 def build_graph_for_wsi(wsi_patches, patch_to_feature, k=5):
@@ -69,6 +76,11 @@ def build_graph_for_wsi(wsi_patches, patch_to_feature, k=5):
         patches = data['paths']
         coords = data['coords']
         labels = data['labels']
+        
+        if not patches:
+            print(f"No patches found for WSI {wsi_id}")
+            continue
+        
         patch_features = np.array([patch_to_feature[patch] for patch in patches])
 
         # Initialize NearestNeighbors and fit the model
@@ -98,6 +110,7 @@ def build_graph_for_wsi(wsi_patches, patch_to_feature, k=5):
     return graphs
 
 # Build graphs for each WSI
-graphs = build_graph_for_wsi(wsi_patches,patch_to_feature)
-print(f"Graphs have been built for {len(graphs)} WSIs.")
-
+train_graphs = build_graph_for_wsi(train_wsi_patches, train_patch_to_feature)
+valid_graphs = build_graph_for_wsi(valid_wsi_patches, valid_patch_to_feature)
+print(f"Training graphs have been built for {len(train_graphs)} WSIs.")
+print(f"Validation graphs have been built for {len(valid_graphs)} WSIs.")

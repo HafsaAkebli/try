@@ -1,7 +1,7 @@
 import numpy as np
 
 # Path to the .npz file
-output_features_file = "/home/akebli/test5/features_Subset1_train_prostate_medium.npz"
+output_features_file = "/home/akebli/test5/features_Subset1_valid_prostate_medium.npz"
 
 # Load the .npz file
 data = np.load(output_features_file)
