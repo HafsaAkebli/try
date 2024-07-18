@@ -17,7 +17,7 @@ print("CUDA is available:", torch.cuda.is_available())
 
 from build_graphs_cosine import load_features, organize_patches_by_wsi, build_graph_for_wsi
 
-# Define your output features file (replace with the correct subset names)
+# The files of the patches features 
 subset_names = ['Subset1', 'Subset3']
 output_features_files = [f"/home/akebli/test5/features_{subset_name}_train_prostate_medium.npz" for subset_name in subset_names]
 output_features_files_valid = [f"/home/akebli/test5/features_{subset_name}_valid_prostate_medium.npz" for subset_name in subset_names]
@@ -28,6 +28,7 @@ train_features, train_labels, train_patch_paths = load_features(output_features_
 train_features = np.array(train_features)
 train_labels = np.array(train_labels)
 train_patch_paths = np.array(train_patch_paths)
+
 input_dim = train_features.shape[1]
 print("The number of input dimensions is", input_dim)
 
@@ -43,13 +44,17 @@ scaler = StandardScaler()
 train_features = scaler.fit_transform(train_features)
 valid_features = scaler.transform(valid_features)
 
+# Create a mapping from patch path to the patch label or class
+train_patch_to_label = dict(zip(train_patch_paths, train_labels))
+valid_patch_to_label = dict(zip(valid_patch_paths, valid_labels))
+
 # Organize patches by WSI for training
 print("Organizing training patches by WSI...")
-train_wsi_patches = organize_patches_by_wsi(train_patch_paths)
+train_wsi_patches = organize_patches_by_wsi(train_patch_paths, train_patch_to_label)
 
 # Organize patches by WSI for validation
 print("Organizing validation patches by WSI...")
-valid_wsi_patches = organize_patches_by_wsi(valid_patch_paths)
+valid_wsi_patches = organize_patches_by_wsi(valid_patch_paths, valid_patch_to_label)
 
 # Create patch to feature mapping for training
 train_patch_to_feature = {train_patch_paths[i]: train_features[i] for i in range(len(train_patch_paths))}
