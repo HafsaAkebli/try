@@ -6,12 +6,10 @@ from torch_geometric.nn import GCNConv
 from torch_geometric.loader import DataLoader
 import numpy as np
 from torch_geometric.data import Data
-import networkx as nx
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
-from sklearn.model_selection import train_test_split
 from collections import defaultdict
-import random
+
 
 # Define the device to use (GPU if available, otherwise CPU)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -22,32 +20,54 @@ from build_graphs_cosine import load_features, organize_patches_by_wsi, build_gr
 # Define your output features file (replace with the correct subset names)
 subset_names = ['Subset1', 'Subset3']
 output_features_files = [f"/home/akebli/test5/features_{subset_name}_train_prostate_medium.npz" for subset_name in subset_names]
+output_features_files_valid = [f"/home/akebli/test5/features_{subset_name}_valid_prostate_medium.npz" for subset_name in subset_names]
 
-# Load features, labels, and patch paths
-print("Loading features...")
-features, labels, patch_paths = load_features(output_features_files)
-features = np.array(features)
-labels = np.array(labels)
-patch_paths = np.array(patch_paths)
-input_dim = features.shape[1]
+# Load features, labels, and patch paths for training
+print("Loading training features...")
+train_features, train_labels, train_patch_paths = load_features(output_features_files)
+train_features = np.array(train_features)
+train_labels = np.array(train_labels)
+train_patch_paths = np.array(train_patch_paths)
+input_dim = train_features.shape[1]
 print("The number of input dimensions is", input_dim)
 
-# Normalize the node features
+# Load features, labels, and patch paths for validation
+print("Loading validation features...")
+valid_features, valid_labels, valid_patch_paths = load_features(output_features_files_valid)
+valid_features = np.array(valid_features)
+valid_labels = np.array(valid_labels)
+valid_patch_paths = np.array(valid_patch_paths)
+
+# Normalize the node features using the same scaler for both training and validation
 scaler = StandardScaler()
-features = scaler.fit_transform(features)
+train_features = scaler.fit_transform(train_features)
+valid_features = scaler.transform(valid_features)
 
-# Organize patches by WSI
-print("Organizing patches by WSI...")
-wsi_patches = organize_patches_by_wsi(patch_paths)
+# Organize patches by WSI for training
+print("Organizing training patches by WSI...")
+train_wsi_patches = organize_patches_by_wsi(train_patch_paths)
 
-# Create patch to feature mapping
-patch_to_feature = {patch_paths[i]: features[i] for i in range(len(patch_paths))}
-print("Patch to feature mapping created.")
+# Organize patches by WSI for validation
+print("Organizing validation patches by WSI...")
+valid_wsi_patches = organize_patches_by_wsi(valid_patch_paths)
 
-# Build graphs using cosine similarity and patches as nodes
-print("Building graphs...")
-graphs = build_graph_for_wsi(wsi_patches, patch_to_feature)
-print("Graphs built.")
+# Create patch to feature mapping for training
+train_patch_to_feature = {train_patch_paths[i]: train_features[i] for i in range(len(train_patch_paths))}
+print("Training patch to feature mapping created.")
+
+# Create patch to feature mapping for validation
+valid_patch_to_feature = {valid_patch_paths[i]: valid_features[i] for i in range(len(valid_patch_paths))}
+print("Validation patch to feature mapping created.")
+
+# Build graphs using cosine similarity and patches as nodes for training
+print("Building training graphs...")
+train_graphs = build_graph_for_wsi(train_wsi_patches, train_patch_to_feature)
+print("Training graphs built.")
+
+# Build graphs using cosine similarity and patches as nodes for validation
+print("Building validation graphs...")
+valid_graphs = build_graph_for_wsi(valid_wsi_patches, valid_patch_to_feature)
+print("Validation graphs built.")
 
 # Define class to index mapping
 class_colors = {
@@ -92,7 +112,7 @@ def convert_graph_to_data(graph, class_labels):
     data = Data(x=node_features, edge_index=edge_indices, edge_attr=edge_weights, y=node_labels)
     return data
 
-# Convert all graphs to PyTorch Geometric Data objects
+# Convert all graphs to PyTorch Geometric Data objects for training
 def convert_graphs_to_data_list(graphs, class_labels):
     data_list = []
     for graph in graphs.values():
@@ -100,31 +120,18 @@ def convert_graphs_to_data_list(graphs, class_labels):
         data_list.append(data)
     return data_list
 
-print("Converting graphs to data list...")
-data_list = convert_graphs_to_data_list(graphs, class_to_index)
-print("Graphs converted to data list.")
+print("Converting training graphs to data list...")
+train_data_list = convert_graphs_to_data_list(train_graphs, class_to_index)
+print("Training graphs converted to data list.")
 
+print("Converting validation graphs to data list...")
+valid_data_list = convert_graphs_to_data_list(valid_graphs, class_to_index)
+print("Validation graphs converted to data list.")
 
-# Organize data by WSI
-wsi_data = defaultdict(list)
-for graph, wsi in zip(data_list, wsi_patches.keys()):
-    wsi_data[wsi].append(graph)
-
-# Split WSI into training and validation sets
-wsi_keys = list(wsi_patches.keys())
-random.shuffle(wsi_keys)
-split_idx = int(len(wsi_keys) * 0.8)
-train_wsis = wsi_keys[:split_idx]
-val_wsis = wsi_keys[split_idx:]
-
-train_data = [graph for wsi in train_wsis for graph in wsi_data[wsi]]
-val_data = [graph for wsi in val_wsis for graph in wsi_data[wsi]]
-
-# Split data into training and validation sets
-train_data, val_data = train_test_split(data_list, test_size=0.2, random_state=42)
-train_loader = DataLoader(train_data, batch_size=1, shuffle=True)
-val_loader = DataLoader(val_data, batch_size=1, shuffle=False)
-print("DataLoader created.")
+# Create DataLoaders for training and validation
+train_loader = DataLoader(train_data_list, batch_size=1, shuffle=True)
+val_loader = DataLoader(valid_data_list, batch_size=1, shuffle=False)
+print("DataLoaders created.")
 
 # Define the GCN model
 class GCNModel(nn.Module):
@@ -175,7 +182,7 @@ def validate(model, val_loader):
     return accuracy, precision, recall, f1
 
 # Training loop
-def train(model, train_loader, val_loader, criterion, optimizer, epochs=100):
+def train(model, train_loader, val_loader, criterion, optimizer, epochs=20):
     best_f1 = 0  # Best F1 score for model saving
     for epoch in range(epochs):
         model.train()
@@ -192,14 +199,17 @@ def train(model, train_loader, val_loader, criterion, optimizer, epochs=100):
             optimizer.step()
             total_loss += loss.item()
         print(f'Epoch {epoch+1}/{epochs}, Loss: {total_loss/len(train_loader):.4f}')
+        
+        # Validate after each epoch
         accuracy, precision, recall, f1 = validate(model, val_loader)
+        
         # Save the model if validation F1 score improves
         if f1 > best_f1:
             best_f1 = f1
-            model_save_path = "/home/akebli/test5/try/gcn_model_100epochs_Patches_KNN_Cosine_best.pth"
+            model_save_path = "/home/akebli/test5/try/gcn_model_best.pth"
             torch.save(model.state_dict(), model_save_path)
             print(f"Model saved to {model_save_path}")
 
 print("Starting training...")
-train(model, train_loader, val_loader, criterion, optimizer, epochs=100)
+train(model, train_loader, val_loader, criterion, optimizer, epochs=20)
 print("Training completed.")
