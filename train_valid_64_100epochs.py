@@ -16,7 +16,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print("CUDA is available:", torch.cuda.is_available())
 
 # Redirect prints to a text file
-sys.stdout = open('validation_results_100_64_0.001.txt', 'w')
+sys.stdout = open('validation_results_150_32_0.001.txt', 'w')
 
 from build_graphs_cosine import load_features, organize_patches_by_wsi, build_graph_for_wsi
 
@@ -137,8 +137,8 @@ valid_data_list = convert_graphs_to_data_list(valid_graphs, class_to_index)
 print("Validation graphs converted to data list.")
 
 # Create DataLoaders for training and validation
-train_loader = DataLoader(train_data_list, batch_size=64, shuffle=True)
-val_loader = DataLoader(valid_data_list, batch_size=64, shuffle=False)
+train_loader = DataLoader(train_data_list, batch_size=32, shuffle=True)
+val_loader = DataLoader(valid_data_list, batch_size=32, shuffle=False)
 print("DataLoaders created.")
 
 # Define the GCN model
@@ -193,7 +193,7 @@ def validate(model, val_loader):
     return accuracy, precision, recall, f1
 
 # Training loop
-def train(model, train_loader, val_loader, criterion, optimizer, epochs=100):
+def train(model, train_loader, val_loader, criterion, optimizer, epochs=150):
     best_f1 = 0  # Best F1 score for model saving
     for epoch in range(epochs):
         model.train()
@@ -217,12 +217,12 @@ def train(model, train_loader, val_loader, criterion, optimizer, epochs=100):
         # Save the model if validation F1 score improves
         if f1 > best_f1:
             best_f1 = f1
-            model_save_path = "/home/akebli/test5/try/gcn_model_test_100_64_0.001.pth"
+            model_save_path = "/home/akebli/test5/try/gcn_model_test_150_32_0.001.pth"
             torch.save(model.state_dict(), model_save_path)
             print(f"Model saved to {model_save_path}")
 
 print("Starting training...")
-train(model, train_loader, val_loader, criterion, optimizer, epochs=100)
+train(model, train_loader, val_loader, criterion, optimizer, epochs=150)
 print("Training completed.")
 
 # Close the text file to save the prints
