@@ -17,7 +17,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print("CUDA is available:", torch.cuda.is_available())
 
 # Redirect prints to a text file
-sys.stdout = open('validation_results_100_64_0.0001.txt', 'w')
+sys.stdout = open('validation_KFold_10_epochs_batch_lr.txt', 'w')
 
 from build_graphs_cosine import load_features, organize_patches_by_wsi, build_graph_for_wsi
 
@@ -165,9 +165,9 @@ output_dim = len(class_colors)  # Number of classes
 
 model = GCNModel(input_dim, hidden_dim, output_dim).to(device)
 print("Model initialized.")
-criterion = nn.CrossEntropyLoss() #cross entropy loss function
+criterion = nn.CrossEntropyLoss() # Cross entropy loss function
 print("Criterion initialized.")
-optimizer = optim.Adam(model.parameters(), lr=0.00001) #adam optimizer
+optimizer = optim.Adam(model.parameters(), lr=0.00001) # Adam optimizer
 print("Model, criterion, and optimizer initialized.")
 
 # Validate the model on the validation set
@@ -193,15 +193,23 @@ def validate(model, val_loader):
     
     return accuracy, precision, recall, f1
 
+# Training function with cross-validation on training data and final evaluation on validation data
 def train_cross_val(model_class, criterion, optimizer_class, train_data_list, val_loader, epochs=100, n_splits=10):
-
     kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
     fold_results = defaultdict(list)
 
     for fold, (train_index, val_index) in enumerate(kf.split(train_data_list)):
         print(f"Fold {fold+1}/{n_splits}")
+
         train_subset = [train_data_list[i] for i in train_index]
-        val_subset = [train_data_list[i] for i in val_index]        
+        val_subset = [train_data_list[i] for i in val_index]
+
+        train_loader = DataLoader(train_subset, batch_size=64, shuffle=True)
+        fold_val_loader = DataLoader(val_subset, batch_size=64, shuffle=False)
+
+        model = model_class(input_dim, hidden_dim, output_dim).to(device)
+        optimizer = optimizer_class(model.parameters(), lr=0.00001)
+
         best_f1 = 0  # Best F1 score for model saving
         for epoch in range(epochs):
             model.train()
@@ -218,10 +226,10 @@ def train_cross_val(model_class, criterion, optimizer_class, train_data_list, va
                 optimizer.step()
                 total_loss += loss.item()
             print(f'Epoch {epoch+1}/{epochs}, Loss: {total_loss/len(train_loader):.4f}')
-        
+
         # Validate after each fold training
-        accuracy, precision, recall, f1 = validate(model, val_loader)
-        
+        accuracy, precision, recall, f1 = validate(model, fold_val_loader)
+
         # Collect results for each fold
         fold_results['accuracy'].append(accuracy)
         fold_results['precision'].append(precision)
@@ -234,13 +242,23 @@ def train_cross_val(model_class, criterion, optimizer_class, train_data_list, va
     avg_recall = np.mean(fold_results['recall'])
     avg_f1 = np.mean(fold_results['f1'])
     
-    print(f'Average Validation Accuracy: {avg_accuracy:.4f}')
-    print(f'Average Validation Precision: {avg_precision:.4f}')
-    print(f'Average Validation Recall: {avg_recall:.4f}')
-    print(f'Average Validation F1 Score: {avg_f1:.4f}')
+    print(f'Average Cross-Validation Accuracy: {avg_accuracy:.4f}')
+    print(f'Average Cross-Validation Precision: {avg_precision:.4f}')
+    print(f'Average Cross-Validation Recall: {avg_recall:.4f}')
+    print(f'Average Cross-Validation F1 Score: {avg_f1:.4f}')
+
+    # Final validation on the predefined validation set
+    print("Final validation on the predefined validation set...")
+    final_accuracy, final_precision, final_recall, final_f1 = validate(model, val_loader)
+    
+    print(f'Final Validation Accuracy: {final_accuracy:.4f}')
+    print(f'Final Validation Precision: {final_precision:.4f}')
+    print(f'Final Validation Recall: {final_recall:.4f}')
+    print(f'Final Validation F1 Score: {final_f1:.4f}')
 
 print("Starting cross-validation training...")
 train_cross_val(GCNModel, criterion, optim.Adam, train_data_list, val_loader, epochs=100, n_splits=10)
 print("Cross-validation training completed.")
+
 # Close the text file to save the prints
 sys.stdout.close()
