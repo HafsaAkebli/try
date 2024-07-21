@@ -17,7 +17,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print("CUDA is available:", torch.cuda.is_available())
 
 # Redirect prints to a text file
-sys.stdout = open('validation_KFold_10_epochs_batch_lr.txt', 'w')
+sys.stdout = open('validation_KFold_10_150_32_0.001.txt', 'w')
 
 from build_graphs_cosine import load_features, organize_patches_by_wsi, build_graph_for_wsi
 
@@ -138,8 +138,8 @@ valid_data_list = convert_graphs_to_data_list(valid_graphs, class_to_index)
 print("Validation graphs converted to data list.")
 
 # Create DataLoaders for training and validation
-train_loader = DataLoader(train_data_list, batch_size=64, shuffle=True)
-val_loader = DataLoader(valid_data_list, batch_size=64, shuffle=False)
+train_loader = DataLoader(train_data_list, batch_size=32, shuffle=True)
+val_loader = DataLoader(valid_data_list, batch_size=32, shuffle=False)
 print("DataLoaders created.")
 
 # Define the GCN model
@@ -193,10 +193,12 @@ def validate(model, val_loader):
     
     return accuracy, precision, recall, f1
 
-# Training function with cross-validation on training data and final evaluation on validation data
-def train_cross_val(model_class, criterion, optimizer_class, train_data_list, val_loader, epochs=100, n_splits=10):
+# Define the training function with cross-validation and final evaluation
+def train_cross_val(model_class, criterion, optimizer_class, train_data_list, val_loader, epochs=150, n_splits=10):
     kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
     fold_results = defaultdict(list)
+    best_model_path = "/home/akebli/test5/model_kfold_150_0.001_32.pth"
+    best_final_f1 = 0
 
     for fold, (train_index, val_index) in enumerate(kf.split(train_data_list)):
         print(f"Fold {fold+1}/{n_splits}")
@@ -204,13 +206,12 @@ def train_cross_val(model_class, criterion, optimizer_class, train_data_list, va
         train_subset = [train_data_list[i] for i in train_index]
         val_subset = [train_data_list[i] for i in val_index]
 
-        train_loader = DataLoader(train_subset, batch_size=64, shuffle=True)
-        fold_val_loader = DataLoader(val_subset, batch_size=64, shuffle=False)
+        train_loader = DataLoader(train_subset, batch_size=32, shuffle=True)
+        fold_val_loader = DataLoader(val_subset, batch_size=32, shuffle=False)
 
         model = model_class(input_dim, hidden_dim, output_dim).to(device)
-        optimizer = optimizer_class(model.parameters(), lr=0.00001)
+        optimizer = optimizer_class(model.parameters(), lr=0.001)
 
-        best_f1 = 0  # Best F1 score for model saving
         for epoch in range(epochs):
             model.train()
             total_loss = 0
@@ -256,8 +257,14 @@ def train_cross_val(model_class, criterion, optimizer_class, train_data_list, va
     print(f'Final Validation Recall: {final_recall:.4f}')
     print(f'Final Validation F1 Score: {final_f1:.4f}')
 
+    # Save the best model based on final F1 score
+    if final_f1 > best_final_f1:
+        best_final_f1 = final_f1
+        torch.save(model.state_dict(), best_model_path)
+        print(f"Best model saved to {best_model_path}")
+
 print("Starting cross-validation training...")
-train_cross_val(GCNModel, criterion, optim.Adam, train_data_list, val_loader, epochs=100, n_splits=10)
+train_cross_val(GCNModel, criterion, optim.Adam, train_data_list, val_loader, epochs=150, n_splits=10)
 print("Cross-validation training completed.")
 
 # Close the text file to save the prints
