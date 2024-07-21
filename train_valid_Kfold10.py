@@ -10,6 +10,7 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 from collections import defaultdict
 import sys
+from sklearn.model_selection import KFold
 
 # Define the device to use (GPU if available, otherwise CPU)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -166,7 +167,7 @@ model = GCNModel(input_dim, hidden_dim, output_dim).to(device)
 print("Model initialized.")
 criterion = nn.CrossEntropyLoss() #cross entropy loss function
 print("Criterion initialized.")
-optimizer = optim.Adam(model.parameters(), lr=0.0001) #adam optimizer
+optimizer = optim.Adam(model.parameters(), lr=0.00001) #adam optimizer
 print("Model, criterion, and optimizer initialized.")
 
 # Validate the model on the validation set
@@ -192,38 +193,54 @@ def validate(model, val_loader):
     
     return accuracy, precision, recall, f1
 
-# Training loop
-def train(model, train_loader, val_loader, criterion, optimizer, epochs=100):
-    best_f1 = 0  # Best F1 score for model saving
-    for epoch in range(epochs):
-        model.train()
-        total_loss = 0
-        for data in train_loader:
-            optimizer.zero_grad()
-            data = data.to(device)  # Move data to GPU
-            out = model(data)
-            loss = criterion(out, data.y)
-            if torch.isnan(loss):
-                print("Loss is NaN!")
-                return
-            loss.backward()
-            optimizer.step()
-            total_loss += loss.item()
-        print(f'Epoch {epoch+1}/{epochs}, Loss: {total_loss/len(train_loader):.4f}')
+def train_cross_val(model_class, criterion, optimizer_class, train_data_list, val_loader, epochs=100, n_splits=10):
+
+    kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
+    fold_results = defaultdict(list)
+
+    for fold, (train_index, val_index) in enumerate(kf.split(train_data_list)):
+        print(f"Fold {fold+1}/{n_splits}")
+        train_subset = [train_data_list[i] for i in train_index]
+        val_subset = [train_data_list[i] for i in val_index]        
+        best_f1 = 0  # Best F1 score for model saving
+        for epoch in range(epochs):
+            model.train()
+            total_loss = 0
+            for data in train_loader:
+                optimizer.zero_grad()
+                data = data.to(device)  # Move data to GPU
+                out = model(data)
+                loss = criterion(out, data.y)
+                if torch.isnan(loss):
+                    print("Loss is NaN!")
+                    return
+                loss.backward()
+                optimizer.step()
+                total_loss += loss.item()
+            print(f'Epoch {epoch+1}/{epochs}, Loss: {total_loss/len(train_loader):.4f}')
         
-        # Validate after each epoch
+        # Validate after each fold training
         accuracy, precision, recall, f1 = validate(model, val_loader)
         
-        # Save the model if validation F1 score improves
-        if f1 > best_f1:
-            best_f1 = f1
-            model_save_path = "/home/akebli/test5/try/gcn_model_test_100_64.pth"
-            torch.save(model.state_dict(), model_save_path)
-            print(f"Model saved to {model_save_path}")
+        # Collect results for each fold
+        fold_results['accuracy'].append(accuracy)
+        fold_results['precision'].append(precision)
+        fold_results['recall'].append(recall)
+        fold_results['f1'].append(f1)
 
-print("Starting training...")
-train(model, train_loader, val_loader, criterion, optimizer, epochs=100)
-print("Training completed.")
+    # Average results across folds
+    avg_accuracy = np.mean(fold_results['accuracy'])
+    avg_precision = np.mean(fold_results['precision'])
+    avg_recall = np.mean(fold_results['recall'])
+    avg_f1 = np.mean(fold_results['f1'])
+    
+    print(f'Average Validation Accuracy: {avg_accuracy:.4f}')
+    print(f'Average Validation Precision: {avg_precision:.4f}')
+    print(f'Average Validation Recall: {avg_recall:.4f}')
+    print(f'Average Validation F1 Score: {avg_f1:.4f}')
 
+print("Starting cross-validation training...")
+train_cross_val(GCNModel, criterion, optim.Adam, train_data_list, val_loader, epochs=100, n_splits=10)
+print("Cross-validation training completed.")
 # Close the text file to save the prints
 sys.stdout.close()
