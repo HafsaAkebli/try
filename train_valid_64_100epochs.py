@@ -16,7 +16,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print("CUDA is available:", torch.cuda.is_available())
 
 # Redirect prints to a text file
-sys.stdout = open('validation_results_100_64_0.0001.txt', 'w')
+sys.stdout = open('validation_results_100_64_0.001.txt', 'w')
 
 from build_graphs_cosine import load_features, organize_patches_by_wsi, build_graph_for_wsi
 
@@ -217,7 +217,7 @@ def train(model, train_loader, val_loader, criterion, optimizer, epochs=100):
         # Save the model if validation F1 score improves
         if f1 > best_f1:
             best_f1 = f1
-            model_save_path = "/home/akebli/test5/try/gcn_model_test_100_64.pth"
+            model_save_path = "/home/akebli/test5/try/gcn_model_test_100_64_0.001.pth"
             torch.save(model.state_dict(), model_save_path)
             print(f"Model saved to {model_save_path}")
 
