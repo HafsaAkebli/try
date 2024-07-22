@@ -13,11 +13,11 @@ def evaltile(im, cat):
                 fh.write(outstring)
 
 # Parameters
-stride = 250 // 10  # Ensured proper sliding window movement
-mincontent = 0.95  # Minimum tissue content threshold for tiles
+stride = 10  # Ensured proper sliding window movement
+mincontent = 0.7  # Minimum tissue content threshold for tiles
 
 maindir = "/mnt/dmif-nas/MITEL/challenges/AGGC22/ProMaL/resized-masks/train/"
-outfile = "/home/akebli/test5/try/tiles_list1.txt"
+outfile = "/home/akebli/test5/try/tiles_list_subset2.txt"
 
 # Create output directory if it doesn't exist
 os.makedirs(os.path.dirname(outfile), exist_ok=True)
@@ -26,7 +26,7 @@ with open(outfile, "w") as fh:
     imlist = os.listdir(maindir)
     tilesize = 50  # Because the mask is downscaled by 10 from the WSI
     tileradius = tilesize // 2
-    subset = "Subset"
+    subset = "Subset2"
 
     for img in imlist:
         if img.startswith(subset):
