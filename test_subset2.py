@@ -1,13 +1,14 @@
 import torch
 import torch.nn as nn
-import torch.optim as optim
 import torch.nn.functional as F
 from torch_geometric.nn import GCNConv
 from torch_geometric.loader import DataLoader
 import numpy as np
 from torch_geometric.data import Data
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
-from sklearn.metrics import accuracy_score, precision_recall_fscore_support
+from sklearn.metrics import accuracy_score, precision_recall_fscore_support, confusion_matrix
+import seaborn as sns
+import matplotlib.pyplot as plt
 from collections import defaultdict
 import sys
 
@@ -16,7 +17,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print("CUDA is available:", torch.cuda.is_available())
 
 # Redirect prints to a text file
-sys.stdout = open('testing_results_1.txt', 'w')
+sys.stdout = open('testing_results_2.txt', 'w')
 
 model_path = "/home/akebli/test5/model_kfold_150_0.001_32.pth"
 
@@ -129,7 +130,6 @@ class GCNModel(nn.Module):
 hidden_dim = 64  # Hidden layer dimension
 output_dim = len(class_colors)  # Number of classes
 input_dim = test_data_list[0].x.shape[1]  # Number of input features
-print("input dimension of GCN",input_dim)
 model = GCNModel(input_dim=input_dim, hidden_dim=hidden_dim, output_dim=output_dim)
 model.load_state_dict(torch.load(model_path))
 model.to(device)
@@ -157,6 +157,22 @@ print(f"Precision: {precision:.4f}")
 print(f"Recall: {recall:.4f}")
 print(f"F1 Score: {f1_score:.4f}")
 
+# Confusion Matrix
+cm = confusion_matrix(all_labels, all_preds)
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=class_colors.keys(), yticklabels=class_colors.keys())
+plt.xlabel('Predicted')
+plt.ylabel('True')
+plt.title('Confusion Matrix')
+plt.savefig('confusion_matrix_1.png')
+
+# Print class-wise metrics
+class_wise_metrics = precision_recall_fscore_support(all_labels, all_preds, average=None, labels=range(len(class_colors)))
+for idx, class_name in enumerate(class_colors.keys()):
+    print(f"{class_name} - Precision: {class_wise_metrics[0][idx]:.4f}, Recall: {class_wise_metrics[1][idx]:.4f}, F1 Score: {class_wise_metrics[2][idx]:.4f}")
+
 # Redirect back to console
 sys.stdout.close()
 sys.stdout = sys.__stdout__
+
+# Display the confusion matrix plot
+plt.show()
