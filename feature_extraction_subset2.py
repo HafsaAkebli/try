@@ -62,9 +62,7 @@ def load_histoencoder_model(model_name: str):
 model_name = 'prostate_medium'  # the pretrained model of histoencoder, there is also prostate_small
 
 # Define the patch folders for Subset1 and Subset3
-patch_folders = [
-    "/home/akebli/test5/Patches1/Subset2/train"
-]
+patch_folders = ["/home/akebli/test5/Patches1/Subset2/train"]
 
 # Load the pretrained model and preprocessing transformations
 encoder, preprocess = load_histoencoder_model(model_name)
