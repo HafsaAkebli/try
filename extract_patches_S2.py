@@ -6,13 +6,13 @@ from PIL import Image
 import tifffile
 
 # Define parameters
-patch_size = 500  # Size of the patch (500x500 pixels)
+patch_size = 250  # Size of the patch (500x500 pixels)
 tile_radius = patch_size // 2  # Half the size of the patch (250 pixels)
 stride = 100  # Step for the sliding window
 
 # Input and output paths
 maindir = "/mnt/dmif-nas/MITEL/challenges/AGGC22/ProMaL/resized-masks/train/"
-tiles_list_file = "/home/akebli/test5/try/tiles_list_subset2.txt"
+tiles_list_file = "/home/akebli/test5/try/tiles_list_subset2_1.txt"
 source_folder = "/mnt/dmif-nas/MITEL/challenges/AGGC22/ProMaL/slides"
 destination_folder = "/home/akebli/test5/Patches1/Subset2/morepatches/"
 
