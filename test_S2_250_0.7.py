@@ -163,12 +163,23 @@ sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=class_colors.keys
 plt.xlabel('Predicted')
 plt.ylabel('True')
 plt.title('Confusion Matrix')
-plt.savefig('confusion_matrix_1.png')
+plt.savefig('confusion_matrix_2_250_0.7.png')
 
 # Print class-wise metrics
 class_wise_metrics = precision_recall_fscore_support(all_labels, all_preds, average=None, labels=range(len(class_colors)))
+
+print("\nClass-wise Metrics:")
 for idx, class_name in enumerate(class_colors.keys()):
-    print(f"{class_name} - Precision: {class_wise_metrics[0][idx]:.4f}, Recall: {class_wise_metrics[1][idx]:.4f}, F1 Score: {class_wise_metrics[2][idx]:.4f}")
+    precision = class_wise_metrics[0][idx]
+    recall = class_wise_metrics[1][idx]
+    f1 = class_wise_metrics[2][idx]
+    
+    # Compute accuracy for the class
+    tp = cm[idx, idx]  # True Positives
+    total_instances = np.sum(cm[idx, :])  # Total instances of the class
+    class_accuracy = tp / total_instances if total_instances > 0 else 0
+    
+    print(f"{class_name} - Accuracy: {class_accuracy:.4f}, Precision: {precision:.4f}, Recall: {recall:.4f}, F1 Score: {f1:.4f}")
 
 # Redirect back to console
 sys.stdout.close()
